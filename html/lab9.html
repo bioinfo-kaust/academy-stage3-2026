@@ -37,6 +37,7 @@
                 <li>Perform over-representation analysis (ORA) on DE genes</li>
                 <li>Run Gene Set Enrichment Analysis (GSEA)</li>
                 <li>Interpret and visualize enrichment results</li>
+                <li>Choose between R (clusterProfiler) and Python (g:Profiler) approaches</li>
             </ul>
         </section>
 
@@ -254,6 +255,217 @@ cat("All enrichment results saved to results/enrichment/\n")</code></pre>
         </section>
 
         <section>
+            <h2>Alternative: Python-based Enrichment Analysis</h2>
+            <p>If you prefer Python over R, you can use <strong>g:Profiler</strong> for enrichment analysis. This approach uses a web API and doesn't require local annotation databases.</p>
+
+            <details>
+                <summary><h3 style="display: inline; cursor: pointer;">Python Enrichment Analysis with g:Profiler</h3></summary>
+
+                <div class="step" data-step="1">
+                    <h4>Install required packages</h4>
+                    <pre><code># Install gprofiler-official and visualization libraries
+pip install gprofiler-official pandas matplotlib seaborn openpyxl</code></pre>
+                </div>
+
+                <div class="step" data-step="2">
+                    <h4>Load DE results and prepare gene list</h4>
+                    <pre><code>import pandas as pd
+import numpy as np
+from gprofiler import GProfiler
+
+# Load DESeq2 results
+de_results = pd.read_csv("results/deseq2_all_results.csv", index_col=0)
+
+# Filter significant genes
+sig_genes = de_results[(de_results['padj'] < 0.05) &
+                       (abs(de_results['log2FoldChange']) > 1)]
+
+print(f"Significant genes: {len(sig_genes)}")
+
+# Get gene IDs (remove version numbers if present)
+gene_ids = [g.split('.')[0] for g in sig_genes.index.tolist()]
+
+# Separate up and down-regulated
+up_genes = [g.split('.')[0] for g in
+            sig_genes[sig_genes['log2FoldChange'] > 0].index]
+down_genes = [g.split('.')[0] for g in
+              sig_genes[sig_genes['log2FoldChange'] < 0].index]
+
+print(f"Upregulated: {len(up_genes)}")
+print(f"Downregulated: {len(down_genes)}")</code></pre>
+                </div>
+
+                <div class="step" data-step="3">
+                    <h4>Run GO and KEGG enrichment with g:Profiler</h4>
+                    <pre><code># Initialize g:Profiler
+gp = GProfiler(return_dataframe=True)
+
+# Run enrichment analysis
+# Sources: GO:BP, GO:MF, GO:CC, KEGG, REAC (Reactome)
+enrichment_results = gp.profile(
+    organism='hsapiens',
+    query=gene_ids,
+    sources=['GO:BP', 'GO:MF', 'GO:CC', 'KEGG'],
+    user_threshold=0.05,
+    significance_threshold_method='fdr',
+    no_evidences=False
+)
+
+print(f"Total enriched terms: {len(enrichment_results)}")
+print(enrichment_results.head(10))</code></pre>
+                </div>
+
+                <div class="step" data-step="4">
+                    <h4>Filter and explore results</h4>
+                    <pre><code># Separate by source
+go_bp = enrichment_results[enrichment_results['source'] == 'GO:BP']
+go_mf = enrichment_results[enrichment_results['source'] == 'GO:MF']
+go_cc = enrichment_results[enrichment_results['source'] == 'GO:CC']
+kegg = enrichment_results[enrichment_results['source'] == 'KEGG']
+
+print(f"GO Biological Process: {len(go_bp)} terms")
+print(f"GO Molecular Function: {len(go_mf)} terms")
+print(f"GO Cellular Component: {len(go_cc)} terms")
+print(f"KEGG Pathways: {len(kegg)} terms")
+
+# View top GO:BP terms
+print("\nTop 10 GO Biological Process terms:")
+print(go_bp[['name', 'p_value', 'intersection_size']].head(10))</code></pre>
+                </div>
+
+                <div class="step" data-step="5">
+                    <h4>Create visualization functions</h4>
+                    <pre><code>import matplotlib.pyplot as plt
+import seaborn as sns
+
+def create_dotplot(df, title, top_n=15, output_file=None):
+    """Create a dotplot for enrichment results."""
+    # Take top N terms by p-value
+    plot_data = df.nsmallest(top_n, 'p_value').copy()
+    plot_data['-log10(p)'] = -np.log10(plot_data['p_value'])
+
+    # Calculate gene ratio
+    plot_data['GeneRatio'] = plot_data['intersection_size'] / plot_data['query_size']
+
+    plt.figure(figsize=(10, 8))
+    scatter = plt.scatter(
+        plot_data['GeneRatio'],
+        range(len(plot_data)),
+        s=plot_data['intersection_size'] * 20,
+        c=plot_data['-log10(p)'],
+        cmap='viridis',
+        alpha=0.7
+    )
+
+    plt.yticks(range(len(plot_data)), plot_data['name'])
+    plt.xlabel('Gene Ratio')
+    plt.title(title)
+    plt.colorbar(scatter, label='-log10(p-value)')
+    plt.gca().invert_yaxis()
+    plt.tight_layout()
+
+    if output_file:
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.show()
+
+def create_barplot(df, title, top_n=15, output_file=None):
+    """Create a barplot for enrichment results."""
+    plot_data = df.nsmallest(top_n, 'p_value').copy()
+    plot_data['-log10(p)'] = -np.log10(plot_data['p_value'])
+
+    plt.figure(figsize=(10, 8))
+    colors = plt.cm.viridis(plot_data['-log10(p)'] / plot_data['-log10(p)'].max())
+
+    plt.barh(range(len(plot_data)), plot_data['-log10(p)'], color=colors)
+    plt.yticks(range(len(plot_data)), plot_data['name'])
+    plt.xlabel('-log10(p-value)')
+    plt.title(title)
+    plt.gca().invert_yaxis()
+    plt.tight_layout()
+
+    if output_file:
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.show()</code></pre>
+                </div>
+
+                <div class="step" data-step="6">
+                    <h4>Generate plots</h4>
+                    <pre><code>import os
+os.makedirs("results/enrichment", exist_ok=True)
+
+# Create dotplots for each category
+if len(go_bp) > 0:
+    create_dotplot(go_bp, "GO Biological Process Enrichment",
+                   output_file="results/enrichment/go_bp_dotplot_py.png")
+
+if len(go_mf) > 0:
+    create_dotplot(go_mf, "GO Molecular Function Enrichment",
+                   output_file="results/enrichment/go_mf_dotplot_py.png")
+
+if len(kegg) > 0:
+    create_barplot(kegg, "KEGG Pathway Enrichment",
+                   output_file="results/enrichment/kegg_barplot_py.png")</code></pre>
+                </div>
+
+                <div class="step" data-step="7">
+                    <h4>Compare up vs down-regulated genes</h4>
+                    <pre><code># Run separate enrichment for up and down-regulated genes
+if len(up_genes) > 10:
+    up_enrichment = gp.profile(
+        organism='hsapiens',
+        query=up_genes,
+        sources=['GO:BP', 'KEGG'],
+        user_threshold=0.05
+    )
+    print(f"Upregulated enrichment: {len(up_enrichment)} terms")
+
+if len(down_genes) > 10:
+    down_enrichment = gp.profile(
+        organism='hsapiens',
+        query=down_genes,
+        sources=['GO:BP', 'KEGG'],
+        user_threshold=0.05
+    )
+    print(f"Downregulated enrichment: {len(down_enrichment)} terms")</code></pre>
+                </div>
+
+                <div class="step" data-step="8">
+                    <h4>Save results to Excel</h4>
+                    <pre><code># Save all results to Excel with multiple sheets
+with pd.ExcelWriter("results/enrichment/enrichment_results_python.xlsx") as writer:
+    if len(go_bp) > 0:
+        go_bp.to_excel(writer, sheet_name="GO_BP", index=False)
+    if len(go_mf) > 0:
+        go_mf.to_excel(writer, sheet_name="GO_MF", index=False)
+    if len(go_cc) > 0:
+        go_cc.to_excel(writer, sheet_name="GO_CC", index=False)
+    if len(kegg) > 0:
+        kegg.to_excel(writer, sheet_name="KEGG", index=False)
+
+# Also save as CSV
+enrichment_results.to_csv("results/enrichment/all_enrichment_python.csv", index=False)
+print("Results saved to results/enrichment/")</code></pre>
+                </div>
+
+                <div class="info-box tip">
+                    <strong>Advantages of g:Profiler</strong>
+                    <ul>
+                        <li>No need to install large annotation databases locally</li>
+                        <li>Always uses up-to-date annotations from the web</li>
+                        <li>Supports many organisms beyond human</li>
+                        <li>Accepts various gene ID formats (Ensembl, gene symbols, etc.)</li>
+                        <li>Also available as a <a href="https://biit.cs.ut.ee/gprofiler/" target="_blank">web interface</a></li>
+                    </ul>
+                </div>
+
+                <div class="info-box note">
+                    <strong>Full script available</strong>
+                    <p>A complete Python script for enrichment analysis is available at: <a href="https://github.com/husensofteng/gene-enrichment" target="_blank">github.com/husensofteng/gene-enrichment</a></p>
+                </div>
+            </details>
+        </section>
+
+        <section>
             <h2>Interpreting Results</h2>
             <div class="info-box note">
                 <strong>Key metrics to consider:</strong>
@@ -283,10 +495,11 @@ cat("All enrichment results saved to results/enrichment/\n")</code></pre>
             <ul>
                 <li>Prepare gene lists for enrichment analysis</li>
                 <li>Convert between gene ID formats</li>
-                <li>Perform GO over-representation analysis</li>
+                <li>Perform GO over-representation analysis (R and Python)</li>
                 <li>Run KEGG pathway enrichment</li>
                 <li>Execute Gene Set Enrichment Analysis (GSEA)</li>
                 <li>Visualize and interpret enrichment results</li>
+                <li>Use g:Profiler as a Python alternative to clusterProfiler</li>
             </ul>
         </section>
 
@@ -307,7 +520,7 @@ cat("All enrichment results saved to results/enrichment/\n")</code></pre>
     </main>
 
     <footer>
-        <p>Bioinformatics Specialization Program 2026</p>
+        <p>Bioinformatics Specialization Program 2026 - KAUST Academy</p>
     </footer>
 
     <script>
