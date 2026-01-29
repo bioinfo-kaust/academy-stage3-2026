@@ -15,6 +15,7 @@
                 <li><a href="../index.html">Home</a></li>
                 <li><a href="schedule.html">Schedule</a></li>
                 <li><a href="labs.html">Labs</a></li>
+                <li><a href="projects.html">Projects</a></li>
                 <li><a href="setup.html" class="active">Setup</a></li>
             </ul>
         </div>
@@ -33,9 +34,8 @@
         </div>
 
         <section id="linux-setup">
-            <h2>Step 1: Linux Terminal Setup</h2>
-
-            <h3>For macOS Users</h3>
+            <h2>Step 1: Command Line Terminal Setup</h2>
+            <details><summary>For macOS Users</summary>
             <p>macOS includes a built-in Terminal application with a Unix-based shell.</p>
             <pre><code># Open Terminal
 # Applications > Utilities > Terminal
@@ -44,11 +44,11 @@
 # Verify your shell
 echo $SHELL
 
-# Check bash/zsh version
-bash --version
-zsh --version</code></pre>
+</code></pre>
 
-            <h3>For Windows Users (WSL)</h3>
+</details>
+            <details>
+            <summary>For Windows Users (WSL)</summary>
             <p>Windows Subsystem for Linux (WSL) provides a Linux environment on Windows.</p>
 
             <div class="step" data-step="1">
@@ -80,8 +80,8 @@ sudo apt install -y wget curl git build-essential</code></pre>
                 <strong>Accessing Windows Files from WSL</strong>
                 <p>Your Windows drives are mounted under <code>/mnt/</code>. For example, <code>C:\Users\YourName\Documents</code> is accessible at <code>/mnt/c/Users/YourName/Documents</code>.</p>
             </div>
-
-            <h3>For Linux Users</h3>
+            </details>
+            <details><summary>For Linux Users</summary>
             <p>You likely already have a terminal. Ensure you have essential tools:</p>
             <pre><code># Ubuntu/Debian
 sudo apt update
@@ -89,6 +89,7 @@ sudo apt install -y wget curl git build-essential
 
 # Fedora/CentOS
 sudo dnf install -y wget curl git gcc gcc-c++ make</code></pre>
+</details>
         </section>
 
         <section id="conda-setup">
