@@ -151,13 +151,66 @@ chmod +x stats.sh
             </div>
 
             <div class="step" data-step="7">
+                <h3>Get comprehensive stats with SeqKit</h3>
+                <p>SeqKit is a fast and powerful toolkit for FASTA/Q file manipulation. It provides comprehensive statistics in a single command.</p>
+                <pre><code># Install SeqKit if not already installed
+conda install -c bioconda seqkit -y
+
+# Get basic statistics for all FASTQ files
+seqkit stats raw_data/*.fastq.gz
+
+# Output includes:
+# - file: filename
+# - format: file format (FASTQ)
+# - type: sequence type (DNA)
+# - num_seqs: number of sequences/reads
+# - sum_len: total bases
+# - min_len, avg_len, max_len: read length statistics</code></pre>
+
+                <h4>Detailed statistics with SeqKit</h4>
+                <pre><code># Get more detailed statistics (includes Q20/Q30 percentages)
+seqkit stats -a raw_data/*.fastq.gz
+
+# Additional columns with -a flag:
+# - Q1, Q2, Q3: quartiles of sequence length
+# - sum_gap: total gap length
+# - N50: N50 statistic
+# - Q20(%): percentage of bases with quality >= Q20
+# - Q30(%): percentage of bases with quality >= Q30</code></pre>
+
+                <h4>Other useful SeqKit commands</h4>
+                <pre><code># Get GC content
+seqkit fx2tab --name --gc raw_data/*_1.fastq.gz | head -10
+
+# Get sequence length distribution
+seqkit fx2tab --name --length raw_data/*_1.fastq.gz | \
+    cut -f2 | sort | uniq -c | sort -rn | head -10
+
+# Subsample reads (useful for quick tests)
+seqkit sample -n 1000 raw_data/*_1.fastq.gz -o raw_data/sample_subset.fastq.gz
+
+# Convert FASTQ to FASTA
+seqkit fq2fa raw_data/*_1.fastq.gz -o raw_data/reads.fasta
+
+# Search for sequences containing a pattern
+seqkit grep -s -p "AGATCGGAAG" raw_data/*_1.fastq.gz | head -20</code></pre>
+                <div class="info-box tip">
+                    <strong>Tip</strong>
+                    SeqKit is much faster than using shell commands for large files and provides more comprehensive statistics. It's a must-have tool for any bioinformatics workflow.
+                </div>
+            </div>
+
+            <div class="step" data-step="8">
                 <h3>Compare multiple samples</h3>
                 <p>If you have multiple samples, compare their basic properties:</p>
                 <pre><code># List all samples and their read counts
 for f in raw_data/*_1.fastq.gz; do
     count=$(zcat $f | wc -l | awk '{print $1/4}')
     echo "$(basename $f): $count reads"
-done</code></pre>
+done
+
+# Or use SeqKit for a cleaner comparison
+seqkit stats raw_data/*_1.fastq.gz -T | column -t</code></pre>
             </div>
         </section>
 
@@ -169,7 +222,8 @@ done</code></pre>
                 <li>Understand FASTQ format structure and quality encoding</li>
                 <li>Extract read information using command-line tools</li>
                 <li>Work efficiently with large compressed files</li>
-                <li>Calculate basic dataset statistics</li>
+                <li>Use SeqKit to get comprehensive statistics on FASTQ files</li>
+                <li>Compare multiple samples quickly</li>
             </ul>
         </section>
 
