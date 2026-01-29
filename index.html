@@ -3,32 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bioinformatics Specialization Program – 2026</title>
+    <title>Bioinformatics Specialization Program 2026</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header>
-        <h1>Bioinformatics Specialization Program – 2026</h1>
-        <p>A comprehensive training program in bioinformatics and genomics data analysis.</p>
-    </header>
-
     <nav>
-        <ul>
-            <li><a href="html/overview.html">Overview</a></li>
-            <li><a href="html/program-schedule.html">Program Schedule</a></li>
-            <li><a href="html/labs.html">Labs</a></li>
-        </ul>
+        <div class="nav-container">
+            <a href="index.html" class="logo">Bioinformatics 2026</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="html/schedule.html">Schedule</a></li>
+                <li><a href="html/labs.html">Labs</a></li>
+                <li><a href="html/setup.html">Setup</a></li>
+            </ul>
+        </div>
     </nav>
 
     <main>
-        <section id="welcome">
-            <h2>Welcome to the Bioinformatics Specialization Program</h2>
-            <p>Please navigate through the sections using the menu above.</p>
+        <div class="hero">
+            <h1 style="color:aliceblue;">Bioinformatics Specialization Program</h1>
+            <p>An intensive program focused on teaching applied bioinformatics with hands-on sessions</p>
+            <div class="dates">
+                <strong>February 4-7, 2026</strong> | Building 9 Room ??
+            </div>
+        </div>
+
+        <section>
+            <h2>Program Learning Outcomes</h2>
+            <p>By the end of this program, you will be able to:</p>
+            <div class="outcome-grid">
+                <div class="outcome-item">
+                    <span class="icon">&#128218;</span>
+                    <div>
+                        <strong>Foundational Skills</strong>
+                        <p>Develop foundational skills in bioinformatics and genomics data analysis</p>
+                    </div>
+                </div>
+                <div class="outcome-item">
+                    <span class="icon">&#128187;</span>
+                    <div>
+                        <strong>Linux & Tools</strong>
+                        <p>Gain hands-on experience using Linux-based computational environments and standard bioinformatics tools</p>
+                    </div>
+                </div>
+                <div class="outcome-item">
+                    <span class="icon">&#129516;</span>
+                    <div>
+                        <strong>Transcriptomics</strong>
+                        <p>Build a solid understanding of transcriptomics and RNA sequencing (RNA-seq) principles and applications</p>
+                    </div>
+                </div>
+                <div class="outcome-item">
+                    <span class="icon">&#128196;</span>
+                    <div>
+                        <strong>Data Formats</strong>
+                        <p>Work confidently with commonly used genomics and transcriptomics data formats</p>
+                    </div>
+                </div>
+                <div class="outcome-item">
+                    <span class="icon">&#128300;</span>
+                    <div>
+                        <strong>End-to-End Workflow</strong>
+                        <p>Experience a complete RNA-seq analysis workflow, from raw data to biological insight</p>
+                    </div>
+                </div>
+                <div class="outcome-item">
+                    <span class="icon">&#127891;</span>
+                    <div>
+                        <strong>Problem Solving</strong>
+                        <p>Solve real bioinformatics challenges and present bioinformatics findings</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Practical Information</h2>
+
+            <h3>Schedule</h3>
+            <ul>
+                <li><strong>Dates:</strong> February 4-7, 2026 (Wednesday - Saturday)</li>
+                <li><strong>Daily Sessions:</strong> 9:00-12:00 and 14:00-17:00</li>
+                <li><strong>Final Day:</strong> Finishes at 14:00 (2 PM)</li>
+                <li><strong>Venue:</strong> Building 9</li>
+            </ul>
+
+            <h3>Pre-Program Support</h3>
+            <p>We provide support sessions to help you set up your computing environment before the program starts:</p>
+            <ul>
+                <li><strong>Support Session 1:</strong> Sunday, February 2 at 2:00 PM (Zoom)</li>
+                <li><strong>Support Session 2:</strong> Monday, February 3 at 10:00 AM (Zoom)</li>
+            </ul>
+            <p>Please complete the <a href="html/setup.html">Environment Setup</a> before attending the program.</p>
+
+            <div class="quick-links">
+                <a href="html/schedule.html" class="quick-link">&#128197; View Full Schedule</a>
+                <a href="html/labs.html" class="quick-link">&#129514; Browse Labs</a>
+                <a href="html/setup.html" class="quick-link">&#128736; Setup Environment</a>
+            </div>
+        </section>
+
+        <section>
+            <h2>Program Overview</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <span class="tag">Day 1</span>
+                    <h3>Foundations & Transcriptomics</h3>
+                    <p>Bioinformatics foundations, computing environments, genomic file formats, and introduction to transcriptomics and RNA-seq experimental design.</p>
+                    <a href="html/schedule.html#day1">View Day 1 Schedule &rarr;</a>
+                </div>
+                <div class="card">
+                    <span class="tag">Day 2</span>
+                    <h3>Data Preprocessing Pipeline</h3>
+                    <p>Quality evaluation and control, read alignment to reference genome, and read counting/quantification to build expression matrices.</p>
+                    <a href="html/schedule.html#day2">View Day 2 Schedule &rarr;</a>
+                </div>
+                <div class="card">
+                    <span class="tag">Day 3</span>
+                    <h3>Downstream Analysis</h3>
+                    <p>Differential expression analysis, visualization and reporting, pathway and enrichment analysis, and extended RNA-seq applications.</p>
+                    <a href="html/schedule.html#day3">View Day 3 Schedule &rarr;</a>
+                </div>
+                <div class="card">
+                    <span class="tag">Day 4</span>
+                    <h3>Advanced Topics & Presentations</h3>
+                    <p>Emerging domains (single-cell, spatial transcriptomics), workflow summary, examination, and group project presentations.</p>
+                    <a href="html/schedule.html#day4">View Day 4 Schedule &rarr;</a>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Tools You Will Learn</h2>
+            <div class="tools-list">
+                <span class="tool-tag">FastQC</span>
+                <span class="tool-tag">fastp</span>
+                <span class="tool-tag">TrimGalore</span>
+                <span class="tool-tag">Cutadapt</span>
+                <span class="tool-tag">STAR</span>
+                <span class="tool-tag">samtools</span>
+                <span class="tool-tag">IGV</span>
+                <span class="tool-tag">Salmon</span>
+                <span class="tool-tag">StringTie</span>
+                <span class="tool-tag">featureCounts</span>
+                <span class="tool-tag">DESeq2</span>
+                <span class="tool-tag">seaborn</span>
+                <span class="tool-tag">MultiQC</span>
+                <span class="tool-tag">ClusterProfiler</span>
+            </div>
         </section>
     </main>
 
     <footer>
-        <p>&copy; 2026 Bioinformatics Specialization Program</p>
+        <p>Bioinformatics Specialization Program 2026</p>
     </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+    </script>
 </body>
 </html>

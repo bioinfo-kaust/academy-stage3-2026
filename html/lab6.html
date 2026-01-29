@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 6: Counting & Expression Matrix Construction - Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">Bioinformatics 2026</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="labs.html" class="active">Labs</a></li>
+                <li><a href="setup.html">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <div class="breadcrumbs">
+            <a href="../index.html">Home</a> / <a href="labs.html">Labs</a> / Lab 6
+        </div>
+
+        <div class="lab-header">
+            <h1>Lab 6: Counting & Expression Matrix Construction</h1>
+            <p class="lab-meta">Day 2 | Duration: 45 minutes</p>
+        </div>
+
+        <section>
+            <h2>Objectives</h2>
+            <ul>
+                <li>Understand gene-level vs transcript-level quantification</li>
+                <li>Perform read counting with featureCounts</li>
+                <li>Run transcript-level quantification with Salmon</li>
+                <li>Build and inspect an expression matrix for multiple samples</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Background</h2>
+            <p>After alignment, we need to quantify gene expression by counting how many reads map to each gene. There are two main approaches:</p>
+            <ul>
+                <li><strong>Gene-level counting:</strong> Count reads overlapping gene annotations (featureCounts, HTSeq)</li>
+                <li><strong>Transcript-level quantification:</strong> Estimate transcript abundances (Salmon, kallisto) - can be faster as some tools skip alignment</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Instructions</h2>
+
+            <div class="step" data-step="1">
+                <h3>Set up your environment</h3>
+                <pre><code># Navigate to project directory
+cd ~/bioinformatics_course
+
+# Activate conda environment
+conda activate bioinformatics_course
+
+# Create counts output directory
+mkdir -p counts</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Gene-level counting with featureCounts</h3>
+                <p>featureCounts counts reads that map to genomic features (genes, exons).</p>
+                <pre><code># Run featureCounts on a single sample
+featureCounts \
+    -a references/Homo_sapiens.GRCh38.110.gtf \
+    -o counts/sample_counts.txt \
+    -t exon \
+    -g gene_id \
+    -p \
+    -B \
+    -C \
+    -T 4 \
+    alignment/sample_Aligned.sortedByCoord.out.bam
+
+# Parameters explained:
+# -a: Annotation file (GTF/GFF)
+# -o: Output file
+# -t exon: Count reads overlapping exons
+# -g gene_id: Group by gene_id attribute
+# -p: Count fragments (pairs) instead of reads for paired-end
+# -B: Both reads must be aligned
+# -C: Don't count chimeric fragments
+# -T: Number of threads</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Examine featureCounts output</h3>
+                <pre><code># View the summary file
+cat counts/sample_counts.txt.summary
+
+# View the count matrix (first few genes)
+head -20 counts/sample_counts.txt
+
+# The output has columns:
+# Geneid, Chr, Start, End, Strand, Length, Count
+
+# Extract just gene IDs and counts
+cut -f1,7 counts/sample_counts.txt | tail -n +2 | head -20</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Count multiple samples at once</h3>
+                <p>For differential expression, we need counts for all samples in one matrix.</p>
+                <pre><code># Run featureCounts on all BAM files
+featureCounts \
+    -a references/Homo_sapiens.GRCh38.110.gtf \
+    -o counts/all_samples_counts.txt \
+    -t exon \
+    -g gene_id \
+    -p -B -C -T 4 \
+    alignment/*_Aligned.sortedByCoord.out.bam
+
+# View the combined count matrix
+head counts/all_samples_counts.txt
+
+# The output now has one count column per sample</code></pre>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Transcript-level quantification with Salmon</h3>
+                <p>Salmon performs fast, alignment-free quantification directly from FASTQ files.</p>
+                <pre><code># First, build Salmon index from transcriptome
+# Download transcriptome FASTA if not available
+mkdir -p references/salmon_index
+
+# Build index
+salmon index \
+    -t references/transcriptome.fa \
+    -i references/salmon_index \
+    -k 31
+
+# Run Salmon quantification
+salmon quant \
+    -i references/salmon_index \
+    -l A \
+    -1 trimmed_data/sample_1_val_1.fq.gz \
+    -2 trimmed_data/sample_2_val_2.fq.gz \
+    -o counts/salmon_sample \
+    -p 4 \
+    --validateMappings
+
+# Parameters:
+# -l A: Automatically detect library type
+# -1/-2: Paired-end input files
+# --validateMappings: Selective alignment (more accurate)</code></pre>
+            </div>
+
+            <div class="step" data-step="6">
+                <h3>Examine Salmon output</h3>
+                <pre><code># View Salmon quantification results
+head counts/salmon_sample/quant.sf
+
+# Columns:
+# Name: Transcript ID
+# Length: Transcript length
+# EffectiveLength: Effective length (accounting for fragment length)
+# TPM: Transcripts Per Million
+# NumReads: Estimated read count
+
+# View library format detected
+cat counts/salmon_sample/lib_format_counts.json</code></pre>
+            </div>
+
+            <div class="step" data-step="7">
+                <h3>Create a combined expression matrix</h3>
+                <p>For downstream analysis, we need to combine counts from all samples.</p>
+                <pre><code># Create a simple script to combine featureCounts results
+cat > combine_counts.py << 'EOF'
+import pandas as pd
+import sys
+import os
+
+# Read featureCounts output
+df = pd.read_csv(sys.argv[1], sep='\t', comment='#')
+
+# Keep only gene IDs and count columns
+gene_col = df.columns[0]
+count_cols = df.columns[6:]  # Count columns start at position 6
+
+# Create clean matrix
+matrix = df[[gene_col] + list(count_cols)]
+
+# Clean column names (remove path, keep sample name)
+matrix.columns = [gene_col] + [os.path.basename(c).replace('_Aligned.sortedByCoord.out.bam', '')
+                               for c in count_cols]
+
+# Save
+matrix.to_csv('counts/expression_matrix.tsv', sep='\t', index=False)
+print(f"Matrix shape: {matrix.shape}")
+print(matrix.head())
+EOF
+
+python combine_counts.py counts/all_samples_counts.txt</code></pre>
+            </div>
+
+            <div class="step" data-step="8">
+                <h3>Basic quality checks on count data</h3>
+                <pre><code># Check count distribution
+python3 << 'EOF'
+import pandas as pd
+import numpy as np
+
+# Load expression matrix
+df = pd.read_csv('counts/expression_matrix.tsv', sep='\t', index_col=0)
+
+print("=== Expression Matrix Summary ===")
+print(f"Total genes: {len(df)}")
+print(f"Total samples: {len(df.columns)}")
+
+print("\n=== Per-sample statistics ===")
+print(df.sum())  # Total counts per sample
+
+print("\n=== Genes with zero counts in all samples ===")
+zero_genes = (df.sum(axis=1) == 0).sum()
+print(f"{zero_genes} genes ({100*zero_genes/len(df):.1f}%)")
+
+print("\n=== Genes with low counts ===")
+low_count = (df.sum(axis=1) < 10).sum()
+print(f"{low_count} genes with total count < 10")
+EOF</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Gene vs Transcript Quantification</h2>
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>Gene-level (featureCounts)</th>
+                        <th>Transcript-level (Salmon)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Speed</td>
+                        <td>Requires alignment first</td>
+                        <td>Very fast (alignment-free)</td>
+                    </tr>
+                    <tr>
+                        <td>Resolution</td>
+                        <td>Gene-level only</td>
+                        <td>Transcript isoform level</td>
+                    </tr>
+                    <tr>
+                        <td>Use case</td>
+                        <td>Standard DE analysis</td>
+                        <td>Isoform analysis, faster pipelines</td>
+                    </tr>
+                    <tr>
+                        <td>Output</td>
+                        <td>Integer counts</td>
+                        <td>Estimated counts + TPM</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you learned to:</p>
+            <ul>
+                <li>Perform gene-level read counting with featureCounts</li>
+                <li>Run transcript-level quantification with Salmon</li>
+                <li>Combine counts from multiple samples into an expression matrix</li>
+                <li>Perform basic quality checks on count data</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Next Steps</h2>
+            <p>In <a href="lab7.html">Lab 7</a>, we will use DESeq2 to perform differential expression analysis on our count matrix.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Bioinformatics Specialization Program 2026</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

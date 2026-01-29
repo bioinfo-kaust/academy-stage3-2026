@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environment Setup - Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">Bioinformatics 2026</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="labs.html">Labs</a></li>
+                <li><a href="setup.html" class="active">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <h1>Environment Setup</h1>
+        <p>Complete these setup instructions before the program starts. If you encounter issues, attend one of our pre-program support sessions.</p>
+
+        <div class="info-box note">
+            <strong>Pre-Program Support Sessions</strong>
+            <ul>
+                <li>Sunday, February 2 at 2:00 PM (Zoom)</li>
+                <li>Monday, February 3 at 10:00 AM (Zoom)</li>
+            </ul>
+        </div>
+
+        <section id="linux-setup">
+            <h2>Step 1: Linux Terminal Setup</h2>
+
+            <h3>For macOS Users</h3>
+            <p>macOS includes a built-in Terminal application with a Unix-based shell.</p>
+            <pre><code># Open Terminal
+# Applications > Utilities > Terminal
+# Or use Spotlight: Cmd + Space, type "Terminal"
+
+# Verify your shell
+echo $SHELL
+
+# Check bash/zsh version
+bash --version
+zsh --version</code></pre>
+
+            <h3>For Windows Users (WSL)</h3>
+            <p>Windows Subsystem for Linux (WSL) provides a Linux environment on Windows.</p>
+
+            <div class="step" data-step="1">
+                <h4>Enable WSL</h4>
+                <pre><code># Open PowerShell as Administrator and run:
+wsl --install
+
+# This installs WSL with Ubuntu by default
+# Restart your computer when prompted</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h4>Complete Ubuntu Setup</h4>
+                <pre><code># After restart, Ubuntu will launch automatically
+# Create a username and password when prompted
+
+# Update package lists
+sudo apt update
+sudo apt upgrade -y</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h4>Install Essential Tools</h4>
+                <pre><code># Install basic utilities
+sudo apt install -y wget curl git build-essential</code></pre>
+            </div>
+
+            <div class="info-box tip">
+                <strong>Accessing Windows Files from WSL</strong>
+                <p>Your Windows drives are mounted under <code>/mnt/</code>. For example, <code>C:\Users\YourName\Documents</code> is accessible at <code>/mnt/c/Users/YourName/Documents</code>.</p>
+            </div>
+
+            <h3>For Linux Users</h3>
+            <p>You likely already have a terminal. Ensure you have essential tools:</p>
+            <pre><code># Ubuntu/Debian
+sudo apt update
+sudo apt install -y wget curl git build-essential
+
+# Fedora/CentOS
+sudo dnf install -y wget curl git gcc gcc-c++ make</code></pre>
+        </section>
+
+        <section id="conda-setup">
+            <h2>Step 2: Conda Setup</h2>
+            <p>Conda is a package and environment manager that simplifies installing bioinformatics tools.</p>
+
+            <div class="step" data-step="1">
+                <h3>Download Miniconda</h3>
+                <pre><code># Navigate to your home directory
+cd ~
+
+# Download Miniconda installer
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+
+# For macOS (Intel):
+# wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+
+# For macOS (Apple Silicon M1/M2/M3):
+# wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Install Miniconda</h3>
+                <pre><code># Run the installer
+bash Miniconda3-latest-Linux-x86_64.sh
+
+# Follow the prompts:
+# - Press Enter to review license, then type 'yes' to accept
+# - Press Enter to accept default installation location (~miniconda3)
+# - Type 'yes' when asked to run 'conda init'</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Initialize Conda</h3>
+                <pre><code># Close and reopen your terminal, OR run:
+source ~/.bashrc  # For bash
+# source ~/.zshrc  # For zsh
+
+# Verify conda is installed
+conda --version
+
+# You should see (base) in your prompt</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Configure Conda Channels</h3>
+                <p>Add bioconda and conda-forge channels for bioinformatics packages.</p>
+                <pre><code># Add channels in correct priority order
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+
+# Set channel priority
+conda config --set channel_priority strict
+
+# Verify channels
+conda config --show channels</code></pre>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Update Conda</h3>
+                <pre><code># Update conda to latest version
+conda update -n base -c defaults conda -y</code></pre>
+            </div>
+        </section>
+
+        <section id="environment-setup">
+            <h2>Step 3: Create Course Environment</h2>
+            <p>Create a dedicated conda environment with all required tools.</p>
+
+            <div class="step" data-step="1">
+                <h3>Create the Environment</h3>
+                <pre><code># Create environment with Python 3.9
+conda create -n bioinformatics_course python=3.9 -y
+
+# Activate the environment
+conda activate bioinformatics_course
+
+# Your prompt should now show (bioinformatics_course)</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Install Bioinformatics Tools</h3>
+                <pre><code># Install core bioinformatics tools
+conda install -c bioconda \
+    fastqc \
+    fastp \
+    trim-galore \
+    cutadapt \
+    star \
+    samtools \
+    salmon \
+    subread \
+    multiqc \
+    sra-tools \
+    -y
+
+# This may take several minutes</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Install Python Packages</h3>
+                <pre><code># Install Python data science packages
+conda install -c conda-forge \
+    pandas \
+    numpy \
+    matplotlib \
+    seaborn \
+    jupyter \
+    -y</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Verify Installation</h3>
+                <pre><code># Test that tools are accessible
+fastqc --version
+fastp --version
+STAR --version
+samtools --version
+salmon --version
+multiqc --version
+
+# Test Python packages
+python -c "import pandas; import seaborn; print('Python packages OK')"</code></pre>
+            </div>
+        </section>
+
+        <section id="r-setup">
+            <h2>Step 4: R and Bioconductor Setup</h2>
+            <p>R is needed for DESeq2 and clusterProfiler analysis.</p>
+
+            <div class="step" data-step="1">
+                <h3>Install R via Conda</h3>
+                <pre><code># Make sure your environment is activated
+conda activate bioinformatics_course
+
+# Install R
+conda install -c conda-forge r-base=4.2 -y</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Install Bioconductor Packages</h3>
+                <pre><code># Start R
+R
+
+# Install BiocManager
+install.packages("BiocManager")
+
+# Install DESeq2
+BiocManager::install("DESeq2")
+
+# Install clusterProfiler and dependencies
+BiocManager::install(c(
+    "clusterProfiler",
+    "org.Hs.eg.db",
+    "enrichplot",
+    "DOSE"
+))
+
+# Install additional visualization packages
+install.packages(c("ggplot2", "pheatmap", "RColorBrewer"))
+
+# Test installations
+library(DESeq2)
+library(clusterProfiler)
+print("R packages installed successfully!")
+
+# Exit R
+q()</code></pre>
+            </div>
+        </section>
+
+        <section id="verify-setup">
+            <h2>Step 5: Verify Complete Setup</h2>
+            <p>Run this verification script to ensure everything is properly installed.</p>
+            <pre><code># Create and run verification script
+cat > verify_setup.sh << 'EOF'
+#!/bin/bash
+echo "=== Bioinformatics Course Environment Verification ==="
+echo ""
+
+echo "Checking conda environment..."
+if [[ "$CONDA_DEFAULT_ENV" == "bioinformatics_course" ]]; then
+    echo "✓ Conda environment active"
+else
+    echo "✗ Please activate: conda activate bioinformatics_course"
+fi
+echo ""
+
+echo "Checking bioinformatics tools..."
+tools=("fastqc" "fastp" "STAR" "samtools" "salmon" "multiqc" "prefetch")
+for tool in "${tools[@]}"; do
+    if command -v $tool &> /dev/null; then
+        echo "✓ $tool found"
+    else
+        echo "✗ $tool NOT found"
+    fi
+done
+echo ""
+
+echo "Checking Python packages..."
+python -c "
+import sys
+packages = ['pandas', 'numpy', 'matplotlib', 'seaborn']
+for pkg in packages:
+    try:
+        __import__(pkg)
+        print(f'✓ {pkg}')
+    except ImportError:
+        print(f'✗ {pkg} NOT found')
+"
+echo ""
+
+echo "Checking R packages..."
+Rscript -e "
+packages <- c('DESeq2', 'clusterProfiler', 'ggplot2')
+for (pkg in packages) {
+    if (require(pkg, character.only=TRUE, quietly=TRUE)) {
+        cat(paste('✓', pkg, '\n'))
+    } else {
+        cat(paste('✗', pkg, 'NOT found\n'))
+    }
+}
+" 2>/dev/null
+echo ""
+
+echo "=== Verification Complete ==="
+EOF
+
+chmod +x verify_setup.sh
+./verify_setup.sh</code></pre>
+        </section>
+
+        <section id="troubleshooting">
+            <h2>Troubleshooting</h2>
+
+            <h3>Common Issues</h3>
+
+            <div class="info-box warning">
+                <strong>Conda command not found</strong>
+                <p>Run <code>source ~/.bashrc</code> or restart your terminal. If still not working, re-run <code>conda init bash</code>.</p>
+            </div>
+
+            <div class="info-box warning">
+                <strong>Package conflicts during installation</strong>
+                <p>Try creating a fresh environment or install packages one at a time to identify conflicts:</p>
+                <pre><code>conda create -n bioinfo_fresh python=3.9 -y
+conda activate bioinfo_fresh
+conda install -c bioconda fastqc -y
+# Continue with other packages...</code></pre>
+            </div>
+
+            <div class="info-box warning">
+                <strong>WSL: "Unable to locate package"</strong>
+                <p>Update your package lists:</p>
+                <pre><code>sudo apt update</code></pre>
+            </div>
+
+            <div class="info-box warning">
+                <strong>R package installation fails</strong>
+                <p>Try installing dependencies first:</p>
+                <pre><code># In terminal (not R)
+sudo apt install -y libcurl4-openssl-dev libssl-dev libxml2-dev</code></pre>
+            </div>
+
+            <h3>Getting Help</h3>
+            <ul>
+                <li>Attend pre-program support sessions (Zoom links will be provided)</li>
+                <li>Check the course Slack channel for common issues</li>
+                <li>Email TAs with your error messages and system information</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Quick Reference: Daily Commands</h2>
+            <pre><code># Activate your environment (run this every time you open a new terminal)
+conda activate bioinformatics_course
+
+# Navigate to your project directory
+cd ~/bioinformatics_course
+
+# Deactivate when done
+conda deactivate</code></pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>Bioinformatics Specialization Program 2026</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

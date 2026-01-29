@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 9: Enrichment Analysis in Practice - Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">Bioinformatics 2026</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="labs.html" class="active">Labs</a></li>
+                <li><a href="setup.html">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <div class="breadcrumbs">
+            <a href="../index.html">Home</a> / <a href="labs.html">Labs</a> / Lab 9
+        </div>
+
+        <div class="lab-header">
+            <h1>Lab 9: Enrichment Analysis in Practice</h1>
+            <p class="lab-meta">Day 3 | Duration: 45 minutes</p>
+        </div>
+
+        <section>
+            <h2>Objectives</h2>
+            <ul>
+                <li>Understand Gene Ontology (GO) and KEGG pathway databases</li>
+                <li>Perform over-representation analysis (ORA) on DE genes</li>
+                <li>Run Gene Set Enrichment Analysis (GSEA)</li>
+                <li>Interpret and visualize enrichment results</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Background</h2>
+            <p>Enrichment analysis helps interpret differential expression results by identifying biological themes. Key approaches:</p>
+            <ul>
+                <li><strong>Over-Representation Analysis (ORA):</strong> Tests if DE genes are enriched for specific functional categories</li>
+                <li><strong>Gene Set Enrichment Analysis (GSEA):</strong> Uses all genes ranked by expression change, no threshold needed</li>
+            </ul>
+            <p>Common databases:</p>
+            <ul>
+                <li><strong>Gene Ontology (GO):</strong> Biological Process, Molecular Function, Cellular Component</li>
+                <li><strong>KEGG:</strong> Metabolic and signaling pathways</li>
+                <li><strong>Reactome:</strong> Curated biological pathways</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Instructions</h2>
+
+            <div class="step" data-step="1">
+                <h3>Start R and load libraries</h3>
+                <pre><code># Start R
+R
+
+# Load required libraries
+library(clusterProfiler)
+library(org.Hs.eg.db)  # Human annotation database
+library(enrichplot)
+library(ggplot2)
+
+# Set working directory
+setwd("~/bioinformatics_course")</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Load DE results and prepare gene lists</h3>
+                <pre><code># Load DESeq2 results
+de_results <- read.csv("results/deseq2_all_results.csv", row.names = 1)
+
+# Get significant genes
+sig_genes <- subset(de_results, padj < 0.05 & abs(log2FoldChange) > 1)
+cat("Significant genes:", nrow(sig_genes), "\n")
+
+# Get gene IDs (assuming ENSEMBL IDs)
+# Remove version numbers if present (e.g., ENSG00000123456.1 -> ENSG00000123456)
+gene_ids <- gsub("\\..*", "", rownames(sig_genes))
+head(gene_ids)
+
+# Separate up and down-regulated genes
+up_genes <- gsub("\\..*", "", rownames(subset(sig_genes, log2FoldChange > 0)))
+down_genes <- gsub("\\..*", "", rownames(subset(sig_genes, log2FoldChange < 0)))
+
+cat("Upregulated:", length(up_genes), "\n")
+cat("Downregulated:", length(down_genes), "\n")</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Convert gene IDs</h3>
+                <p>ClusterProfiler often requires Entrez IDs. Let's convert from ENSEMBL.</p>
+                <pre><code># Convert ENSEMBL to ENTREZ IDs
+gene_mapping <- bitr(gene_ids,
+                     fromType = "ENSEMBL",
+                     toType = c("ENTREZID", "SYMBOL"),
+                     OrgDb = org.Hs.eg.db)
+
+head(gene_mapping)
+cat("Successfully mapped:", nrow(gene_mapping), "genes\n")
+
+# Get Entrez IDs for enrichment analysis
+entrez_ids <- gene_mapping$ENTREZID</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>GO Over-Representation Analysis</h3>
+                <pre><code># Run GO enrichment (Biological Process)
+go_bp <- enrichGO(gene = entrez_ids,
+                  OrgDb = org.Hs.eg.db,
+                  ont = "BP",  # Biological Process
+                  pAdjustMethod = "BH",
+                  pvalueCutoff = 0.05,
+                  qvalueCutoff = 0.05,
+                  readable = TRUE)
+
+# View top results
+head(go_bp, 10)
+
+# Run GO enrichment for Molecular Function and Cellular Component
+go_mf <- enrichGO(gene = entrez_ids, OrgDb = org.Hs.eg.db,
+                  ont = "MF", pAdjustMethod = "BH",
+                  pvalueCutoff = 0.05, readable = TRUE)
+
+go_cc <- enrichGO(gene = entrez_ids, OrgDb = org.Hs.eg.db,
+                  ont = "CC", pAdjustMethod = "BH",
+                  pvalueCutoff = 0.05, readable = TRUE)</code></pre>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Visualize GO results</h3>
+                <pre><code># Create results directory
+dir.create("results/enrichment", showWarnings = FALSE)
+
+# Barplot of top GO terms
+barplot(go_bp, showCategory = 15) +
+    ggtitle("GO Biological Process Enrichment")
+ggsave("results/enrichment/go_bp_barplot.png", width = 10, height = 8)
+
+# Dotplot
+dotplot(go_bp, showCategory = 15) +
+    ggtitle("GO Biological Process - Dotplot")
+ggsave("results/enrichment/go_bp_dotplot.png", width = 10, height = 8)
+
+# Enrichment map (shows relationships between terms)
+if (nrow(go_bp) > 1) {
+    go_bp_simp <- pairwise_termsim(go_bp)
+    emapplot(go_bp_simp, showCategory = 20) +
+        ggtitle("GO Term Relationships")
+    ggsave("results/enrichment/go_bp_emap.png", width = 12, height = 10)
+}</code></pre>
+            </div>
+
+            <div class="step" data-step="6">
+                <h3>KEGG Pathway Analysis</h3>
+                <pre><code># KEGG enrichment
+kegg_enrich <- enrichKEGG(gene = entrez_ids,
+                          organism = "hsa",  # Human
+                          pAdjustMethod = "BH",
+                          pvalueCutoff = 0.05)
+
+# View results
+head(kegg_enrich, 10)
+
+# Visualize
+if (!is.null(kegg_enrich) && nrow(kegg_enrich) > 0) {
+    barplot(kegg_enrich, showCategory = 15) +
+        ggtitle("KEGG Pathway Enrichment")
+    ggsave("results/enrichment/kegg_barplot.png", width = 10, height = 8)
+}</code></pre>
+            </div>
+
+            <div class="step" data-step="7">
+                <h3>Gene Set Enrichment Analysis (GSEA)</h3>
+                <p>GSEA uses all genes ranked by fold change, not just significant ones.</p>
+                <pre><code># Prepare ranked gene list
+# Use all genes, not just significant ones
+all_genes <- de_results[!is.na(de_results$log2FoldChange), ]
+all_gene_ids <- gsub("\\..*", "", rownames(all_genes))
+
+# Map to Entrez IDs
+all_mapping <- bitr(all_gene_ids,
+                    fromType = "ENSEMBL",
+                    toType = "ENTREZID",
+                    OrgDb = org.Hs.eg.db)
+
+# Create named vector of fold changes
+gene_list <- all_genes$log2FoldChange
+names(gene_list) <- all_gene_ids
+
+# Keep only mapped genes
+gene_list <- gene_list[names(gene_list) %in% all_mapping$ENSEMBL]
+names(gene_list) <- all_mapping$ENTREZID[match(names(gene_list), all_mapping$ENSEMBL)]
+
+# Remove NAs and sort
+gene_list <- gene_list[!is.na(names(gene_list))]
+gene_list <- sort(gene_list, decreasing = TRUE)
+
+head(gene_list)
+
+# Run GSEA
+gsea_go <- gseGO(geneList = gene_list,
+                 OrgDb = org.Hs.eg.db,
+                 ont = "BP",
+                 minGSSize = 10,
+                 maxGSSize = 500,
+                 pvalueCutoff = 0.05,
+                 verbose = FALSE)
+
+# View results
+head(gsea_go, 10)</code></pre>
+            </div>
+
+            <div class="step" data-step="8">
+                <h3>Visualize GSEA results</h3>
+                <pre><code># GSEA dotplot
+if (!is.null(gsea_go) && nrow(gsea_go) > 0) {
+    dotplot(gsea_go, showCategory = 15, split = ".sign") +
+        facet_grid(.~.sign) +
+        ggtitle("GSEA - GO Biological Process")
+    ggsave("results/enrichment/gsea_dotplot.png", width = 12, height = 8)
+
+    # Running score plot for top pathway
+    gseaplot2(gsea_go, geneSetID = 1, title = gsea_go$Description[1])
+    ggsave("results/enrichment/gsea_running_score.png", width = 10, height = 6)
+}</code></pre>
+            </div>
+
+            <div class="step" data-step="9">
+                <h3>Save all results</h3>
+                <pre><code># Save enrichment results as tables
+write.csv(as.data.frame(go_bp), "results/enrichment/go_bp_results.csv")
+write.csv(as.data.frame(go_mf), "results/enrichment/go_mf_results.csv")
+write.csv(as.data.frame(go_cc), "results/enrichment/go_cc_results.csv")
+
+if (!is.null(kegg_enrich)) {
+    write.csv(as.data.frame(kegg_enrich), "results/enrichment/kegg_results.csv")
+}
+
+if (!is.null(gsea_go)) {
+    write.csv(as.data.frame(gsea_go), "results/enrichment/gsea_go_results.csv")
+}
+
+cat("All enrichment results saved to results/enrichment/\n")</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Interpreting Results</h2>
+            <div class="info-box note">
+                <strong>Key metrics to consider:</strong>
+                <ul>
+                    <li><strong>p.adjust:</strong> Corrected p-value (BH method)</li>
+                    <li><strong>GeneRatio:</strong> Proportion of your genes in the pathway</li>
+                    <li><strong>BgRatio:</strong> Pathway size relative to background</li>
+                    <li><strong>Count:</strong> Number of DE genes in the pathway</li>
+                </ul>
+            </div>
+
+            <div class="info-box tip">
+                <strong>Tips for interpretation:</strong>
+                <ul>
+                    <li>Look for biologically meaningful terms related to your experiment</li>
+                    <li>Consider redundancy - many GO terms are related</li>
+                    <li>Use enrichment maps to see term relationships</li>
+                    <li>Validate key findings in the literature</li>
+                    <li>GSEA is more sensitive than ORA for subtle effects</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you learned to:</p>
+            <ul>
+                <li>Prepare gene lists for enrichment analysis</li>
+                <li>Convert between gene ID formats</li>
+                <li>Perform GO over-representation analysis</li>
+                <li>Run KEGG pathway enrichment</li>
+                <li>Execute Gene Set Enrichment Analysis (GSEA)</li>
+                <li>Visualize and interpret enrichment results</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Congratulations!</h2>
+            <p>You have completed the hands-on labs covering the complete RNA-seq analysis workflow:</p>
+            <ol>
+                <li>Data acquisition and file formats</li>
+                <li>Quality evaluation and control</li>
+                <li>Read alignment</li>
+                <li>Expression quantification</li>
+                <li>Differential expression analysis</li>
+                <li>Visualization</li>
+                <li>Pathway and enrichment analysis</li>
+            </ol>
+            <p>Use these skills to analyze your group project data and prepare your presentation!</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Bioinformatics Specialization Program 2026</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>
