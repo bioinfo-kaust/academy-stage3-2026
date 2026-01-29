@@ -1,0 +1,185 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.8;
+    margin: 0;
+    padding: 0;
+    background: #f0f2f5; /* Light gray background */
+    color: #333;
+}
+
+header {
+    background: linear-gradient(to right, #0056b3, #007bff); /* Blue gradient */
+    color: #fff;
+    padding: 2rem 0;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.8em;
+}
+
+header p {
+    font-size: 1.2em;
+    opacity: 0.9;
+}
+
+nav {
+    background: #495057; /* Darker gray for nav */
+    padding: 0.8rem 0;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+nav ul {
+    padding: 0;
+    list-style: none;
+    margin: 0;
+}
+
+nav ul li {
+    display: inline-block;
+    margin: 0 25px;
+}
+
+nav a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1.1em;
+    transition: color 0.3s ease;
+}
+
+nav a:hover {
+    color: #ffc107; /* Amber on hover */
+}
+
+main {
+    padding: 40px 20px;
+    margin: 20px auto;
+    max-width: 1000px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.08);
+}
+
+section {
+    margin-bottom: 40px;
+    padding: 30px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+section h2 {
+    color: #0056b3; /* Dark blue for section titles */
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+    font-size: 2em;
+}
+
+h3, h4 {
+    color: #28a745; /* Green for subheadings */
+    margin-top: 25px;
+    margin-bottom: 15px;
+}
+
+ul {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+
+ol {
+    margin-left: 20px;
+}
+
+.day-schedule {
+    border: 1px solid #cce5ff; /* Light blue border */
+    background-color: #e7f3ff; /* Very light blue background */
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 8px;
+}
+
+.day-schedule h3 {
+    color: #004085; /* Darker blue for day titles */
+    border-bottom: 1px dashed #a3d1ff;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.lab-instructions {
+    background: #d4edda; /* Light green for lab instructions */
+    padding: 18px;
+    border-left: 6px solid #28a745; /* Green accent */
+    margin-top: 20px;
+    border-radius: 6px;
+    color: #155724;
+}
+
+.lab-instructions h5 {
+    color: #155724;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+footer {
+    text-align: center;
+    padding: 25px;
+    background: #333;
+    color: #fff;
+    margin-top: 40px;
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Tabs styling */
+.tab-container {
+    margin-top: 30px;
+}
+
+.tab-buttons {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+.tab-button {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #007bff;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    transition: all 0.3s ease;
+    margin-right: 5px;
+}
+
+.tab-button:hover {
+    background-color: #e2e6ea;
+}
+
+.tab-button.active {
+    background-color: #007bff;
+    color: #fff;
+    border-color: #007bff;
+    border-bottom: 2px solid #007bff; /* Active tab has solid blue border at bottom */
+    position: relative;
+    z-index: 1;
+}
+
+.tab-content {
+    border: 1px solid #007bff;
+    padding: 30px;
+    border-radius: 0 8px 8px 8px;
+    background-color: #fdfdfd;
+}
+
+.tab-content.hidden {
+    display: none;
+}

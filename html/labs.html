@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Labs - Bioinformatics Specialization Program – 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Bioinformatics Specialization Program – 2026</h1>
+        <p>A comprehensive training program in bioinformatics and genomics data analysis.</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="overview.html">Overview</a></li>
+            <li><a href="practical-info.html">Practical Information</a></li>
+            <li><a href="program-schedule.html">Program Schedule</a></li>
+            <li><a href="labs.html">Labs</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="labs">
+            <h2>Hands-on Labs and Tutorials</h2>
+
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" onclick="openDay(event, 'labs-day1')">Day 1 Labs</button>
+                    <button class="tab-button" onclick="openDay(event, 'labs-day2')">Day 2 Labs</button>
+                    <button class="tab-button" onclick="openDay(event, 'labs-day3')">Day 3 Labs</button>
+                    <button class="tab-button" onclick="openDay(event, 'labs-day4')">Day 4 Labs</button>
+                </div>
+
+                <div id="labs-day1" class="tab-content">
+                    <!-- Content for Day 1 Labs will be loaded here dynamically -->
+                </div>
+
+                <div id="labs-day2" class="tab-content hidden">
+                    <!-- Content for Day 2 Labs will be loaded here dynamically -->
+                </div>
+
+                <div id="labs-day3" class="tab-content hidden">
+                    <!-- Content for Day 3 Labs will be loaded here dynamically -->
+                </div>
+
+                <div id="labs-day4" class="tab-content hidden">
+                    <!-- Content for Day 4 Labs will be loaded here dynamically -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Bioinformatics Specialization Program</p>
+    </footer>
+    <script src="../script.js"></script>
+</body>
+</html>
