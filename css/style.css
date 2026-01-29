@@ -183,3 +183,11 @@ footer {
 .tab-content.hidden {
     display: none;
 }
+
+.lab-box {
+    border: 1px solid #cce5ff; /* Light blue border */
+    background-color: #e7f3ff; /* Very light blue background */
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
