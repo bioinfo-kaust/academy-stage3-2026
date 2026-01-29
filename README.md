@@ -2,7 +2,7 @@
 
 Bioinformatics Specialization Program Stage 3 (February 4-7, 2026)
 
-## View the Website
+## Course Web Page
 
 Visit: [https://bioinfo-kaust.github.io/academy-stage3-2026/](https://bioinfo-kaust.github.io/academy-stage3-2026/)
 
@@ -18,4 +18,4 @@ Or cone this repository and open `index.html` locally in a browser.
 
 ## Tools
 
-FastQC, fastp, Trim Galore, STAR, samtools, Salmon, DESeq2, seaborn, MultiQC, ClusterProfiler
+FastQC, fastp, Trim Galore, STAR, samtools, Salmon, DESeq2, seaborn, MultiQC, ClusterProfiler, and other standard bioinformatics tools.
