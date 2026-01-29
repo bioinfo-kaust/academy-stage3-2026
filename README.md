@@ -4,7 +4,7 @@ Bioinformatics Specialization Program Stage 3 (February 4-7, 2026)
 
 ## View the Website
 
-Visit: [https://bioinfo-kaus.github.io/academy-stage3-2026/](https://bioinfo-kaus.github.io/academy-stage3-2026/)
+Visit: [https://bioinfo-kaust.github.io/academy-stage3-2026/](https://bioinfo-kaus.github.io/academy-stage3-2026/)
 
 Or cone this repository and open `index.html` locally in a browser.
 
