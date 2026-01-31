@@ -49,7 +49,7 @@
                     <tr>
                         <td>09:00-09:30</td>
                         <td class="session-type">S1: Welcome and Introduction</td>
-                        <td>Program timeline, practical instructions, profile of instructors & TAs</td>
+                        <td>Program timeline, practical instructions, know the instructors</td>
                     </tr>
                     <tr>
                         <td>09:30-10:00</td>
@@ -58,24 +58,24 @@
                     </tr>
                     <tr>
                         <td>10:00-10:30</td>
-                        <td class="session-type">S3: Bioinformatics Computing Environments</td>
+                        <td class="session-type">S3: Bioinformatics Computing Environments & Context</td>
                         <td>Overview of computing environments and essential bioinformatics skills</td>
                     </tr>
                     <tr class="lab-session">
                         <td>10:30-12:00</td>
-                        <td class="session-type">L1: Warm-up for Large-scale Analysis</td>
+                        <td class="session-type">L1: Bioinformatics Computing Environment</td>
                         <td>Training environment familiarization, access public genomics resources, download example RNA-seq datasets<br>
                         <a href="lab1.html">View Lab Instructions &rarr;</a></td>
                     </tr>
                     <tr>
                         <td>14:00-14:45</td>
                         <td class="session-type">S4: Transcriptomics Overview & Applications</td>
-                        <td>Biological motivation, gene expression profiling</td>
+                        <td>Biological motivation, gene expression profiling and other applications of RNA-seq</td>
                     </tr>
                     <tr>
                         <td>14:45-15:30</td>
                         <td class="session-type">S5: RNA-seq Experimental Design</td>
-                        <td>Replicates, sequencing depth, batch effects</td>
+                        <td>Considerations in RNA-seq experiments including Replicates, sequencing depth, batch effects, etc.</td>
                     </tr>
                     <tr class="lab-session">
                         <td>15:30-16:15</td>
@@ -92,7 +92,7 @@
             </table>
 
             <h3>Slides</h3>
-            <p><a href="../slides/day1.pptx">Download Day 1 Slides (PPTX)</a></p>
+            <p><a href="#">Download Day 1 Slides</a></p>
         </section>
 
         <!-- Day 2 -->
@@ -115,59 +115,48 @@
                         <td>Review of previous day's content</td>
                     </tr>
                     <tr>
-                        <td>09:15-09:45</td>
-                        <td class="session-type">S2: Quality Evaluation Concepts</td>
-                        <td>Sequencing quality metrics, Phred scores, technical variation</td>
+                        <td>09:15-10:00</td>
+                        <td class="session-type">S2: Quality Control</td>
+                        <td>Sequencing quality metrics, Phred scores, technical variation, trimming, preprocessing</td>
                     </tr>
                     <tr class="lab-session">
-                        <td>09:45-10:30</td>
-                        <td class="session-type">L3: Quality Evaluation Hands-on</td>
-                        <td>FastQC, fastp; inspect data quality metrics<br>
+                        <td>10:00-11:00</td>
+                        <td class="session-type">L3: Quality Control Hands-on</td>
+                        <td>FastQC, fastp; inspect data quality metrics, trimming, adapter removal, pre/post-QC comparison<br>
                         <a href="lab3.html">View Lab Instructions &rarr;</a></td>
                     </tr>
                     <tr>
-                        <td>10:30-11:15</td>
-                        <td class="session-type">S3: Quality Control Principles</td>
-                        <td>Filtering, trimming, preprocessing strategies</td>
-                    </tr>
-                    <tr class="lab-session">
-                        <td>11:15-12:00</td>
-                        <td class="session-type">L4: Quality Control Hands-on</td>
-                        <td>Trimming, adapter removal, pre/post-QC comparison (Trim Galore, fastp, FastQC)<br>
-                        <a href="lab4.html">View Lab Instructions &rarr;</a></td>
-                    </tr>
-                    <tr>
-                        <td>14:00-14:30</td>
+                        <td>11:00-12:00</td>
                         <td class="session-type">S4: Reference Genome Alignment</td>
                         <td>Reference genomes, annotations, splice-aware alignment</td>
                     </tr>
                     <tr class="lab-session">
-                        <td>14:30-15:15</td>
-                        <td class="session-type">L5: RNA-seq Alignment Hands-on</td>
+                        <td>14:00-15:00</td>
+                        <td class="session-type">L4: Genome Alignment Hands-on</td>
                         <td>Align reads, inspect BAM files, evaluate mapping metrics (samtools, STAR)<br>
-                        <a href="lab5.html">View Lab Instructions &rarr;</a></td>
+                        <a href="lab4.html">View Lab Instructions &rarr;</a></td>
                     </tr>
                     <tr>
-                        <td>15:15-15:45</td>
+                        <td>15:00-15:45</td>
                         <td class="session-type">S5: Read Counting & Quantification</td>
                         <td>Gene vs transcript quantification, expression matrices</td>
                     </tr>
                     <tr class="lab-session">
                         <td>15:45-16:30</td>
-                        <td class="session-type">L6: Counting & Expression Matrix</td>
-                        <td>Salmon/StringTie, matrix inspection<br>
-                        <a href="lab6.html">View Lab Instructions &rarr;</a></td>
+                        <td class="session-type">L5: Quantification & Expression Matrix</td>
+                        <td>Salmon, expression matrix inspection<br>
+                        <a href="lab5.html">View Lab Instructions &rarr;</a></td>
                     </tr>
                     <tr>
                         <td>16:30-17:00</td>
                         <td class="session-type">Q&A & Project Review</td>
-                        <td>Questions and project progress check</td>
+                        <td>Questions and project progress support</td>
                     </tr>
                 </tbody>
             </table>
 
             <h3>Slides</h3>
-            <p><a href="../slides/day2.pptx">Download Day 2 Slides (PPTX)</a></p>
+            <p><a href="#">Download Day 2 Slides</a></p>
         </section>
 
         <!-- Day 3 -->
@@ -196,9 +185,9 @@
                     </tr>
                     <tr class="lab-session">
                         <td>10:00-11:00</td>
-                        <td class="session-type">L7: Differential Expression Analysis</td>
-                        <td>Run DESeq2, inspect DE results, PCA, MA plots<br>
-                        <a href="lab7.html">View Lab Instructions &rarr;</a></td>
+                        <td class="session-type">L6: Differential Expression Analysis</td>
+                        <td>Perform differential expression analysis, inspect DE results<br>
+                        <a href="lab6.html">View Lab Instructions &rarr;</a></td>
                     </tr>
                     <tr>
                         <td>11:00-11:30</td>
@@ -207,20 +196,20 @@
                     </tr>
                     <tr class="lab-session">
                         <td>11:30-12:00</td>
-                        <td class="session-type">L8: Visualization & Integrated QC</td>
+                        <td class="session-type">L7: Visualization & Integrated QC</td>
                         <td>Generate plots using seaborn in Python, run MultiQC<br>
-                        <a href="lab8.html">View Lab Instructions &rarr;</a></td>
+                        <a href="lab7.html">View Lab Instructions &rarr;</a></td>
                     </tr>
                     <tr>
                         <td>14:00-14:45</td>
                         <td class="session-type">S4: Pathway & Enrichment Analysis</td>
-                        <td>GO and KEGG, GSEA concepts</td>
+                        <td>Gene Ontology, gene pathways, GSEA concepts</td>
                     </tr>
                     <tr class="lab-session">
                         <td>14:45-15:30</td>
-                        <td class="session-type">L9: Enrichment Analysis in Practice</td>
-                        <td>Run enrichment analysis and interpret biological results (ClusterProfiler)<br>
-                        <a href="lab9.html">View Lab Instructions &rarr;</a></td>
+                        <td class="session-type">L8: Enrichment Analysis in Practice</td>
+                        <td>Run enrichment analysis and interpret biological results<br>
+                        <a href="lab8.html">View Lab Instructions &rarr;</a></td>
                     </tr>
                     <tr>
                         <td>15:30-16:30</td>
@@ -229,14 +218,14 @@
                     </tr>
                     <tr>
                         <td>16:30-17:00</td>
-                        <td class="session-type">Q&A & Project Review</td>
-                        <td>Questions and project progress check</td>
+                        <td class="session-type">Q&A & Project Support</td>
+                        <td>Questions and project progress</td>
                     </tr>
                 </tbody>
             </table>
 
             <h3>Slides</h3>
-            <p><a href="../slides/day3.pptx">Download Day 3 Slides (PPTX)</a></p>
+            <p><a href="#">Download Day 3 Slides</a></p>
         </section>
 
         <!-- Day 4 -->
@@ -255,8 +244,8 @@
                 <tbody>
                     <tr>
                         <td>09:00-09:15</td>
-                        <td class="session-type">S1: Recap of Day 3</td>
-                        <td>Review of previous day's content</td>
+                        <td class="session-type">S1: Recap of Genomics Analysis</td>
+                        <td>Review of day 3 content</td>
                     </tr>
                     <tr>
                         <td>09:15-10:30</td>
@@ -269,17 +258,17 @@
                         <td>End-to-end RNA-seq recap, outlook to other genomics areas</td>
                     </tr>
                     <tr>
-                        <td>11:00-12:30</td>
+                        <td>11:00-12:00</td>
                         <td class="session-type">Examination</td>
-                        <td>Knowledge check covering concepts and workflows</td>
+                        <td></td>
                     </tr>
                     <tr>
-                        <td>14:00-16:00</td>
+                        <td>12:00-14:13:45</td>
                         <td class="session-type">Group Presentations (Flash Talks)</td>
                         <td>Study design, pipeline overview, key findings</td>
                     </tr>
                     <tr>
-                        <td>16:00-16:30</td>
+                        <td>13:45-14:00</td>
                         <td class="session-type">S4: Course Evaluation & Wrap-up</td>
                         <td>Feedback survey, reflection, next steps</td>
                     </tr>
@@ -287,7 +276,7 @@
             </table>
 
             <h3>Slides</h3>
-            <p><a href="../slides/day4.pptx">Download Day 4 Slides (PPTX)</a></p>
+            <p><a href="#">Download Day 4 Slides</a></p>
         </section>
     </main>
 

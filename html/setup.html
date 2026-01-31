@@ -25,11 +25,12 @@
         <h1>Environment Setup</h1>
         <p>Complete these setup instructions before the program starts. If you encounter issues, attend one of our pre-program support sessions.</p>
 
+        
         <div class="info-box note">
             <strong>Pre-Program Support Sessions</strong>
             <ul>
-                <li>Sunday, February 2 at 2:00 PM (Zoom)</li>
-                <li>Monday, February 3 at 10:00 AM (Zoom)</li>
+                <li>Sunday, February 1 at 2:00 PM (Zoom)</li>
+                <li>Monday, February 2 at 10:00 AM (Zoom)</li>
             </ul>
         </div>
 
@@ -43,7 +44,6 @@
 
 # Verify your shell
 echo $SHELL
-
 </code></pre>
 
 </details>
@@ -93,113 +93,91 @@ sudo dnf install -y wget curl git gcc gcc-c++ make</code></pre>
         </section>
 
         <section id="conda-setup">
-            <h2>Step 2: Conda Setup</h2>
-            <p>Conda is a package and environment manager that simplifies installing bioinformatics tools.</p>
+            <h2>Step 2: Conda/Mamba Setup</h2>
+            <p>We use <strong>Miniforge</strong> with <strong>mamba</strong> for faster and more reliable package installation. Miniforge comes with mamba pre-installed and works well on all platforms including Apple Silicon Macs.</p>
 
             <div class="step" data-step="1">
-                <h3>Download Miniconda</h3>
+                <h3>Download Miniforge</h3>
                 <pre><code># Navigate to your home directory
 cd ~
 
-# Download Miniconda installer
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+# For Linux:
+curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+
+# For macOS (Apple Silicon M1/M2/M3) - RECOMMENDED:
+# curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
 
 # For macOS (Intel):
-# wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
-
-# For macOS (Apple Silicon M1/M2/M3):
-# wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh</code></pre>
+# curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh</code></pre>
             </div>
 
             <div class="step" data-step="2">
-                <h3>Install Miniconda</h3>
-                <pre><code># Run the installer
-bash Miniconda3-latest-Linux-x86_64.sh
+                <h3>Install Miniforge</h3>
+                <pre><code># Run the installer (use your downloaded filename)
+bash Miniforge3-Linux-x86_64.sh
 
 # Follow the prompts:
 # - Press Enter to review license, then type 'yes' to accept
-# - Press Enter to accept default installation location (~miniconda3)
+# - Press Enter to accept default installation location
 # - Type 'yes' when asked to run 'conda init'</code></pre>
             </div>
 
             <div class="step" data-step="3">
-                <h3>Initialize Conda</h3>
+                <h3>Initialize and Verify</h3>
                 <pre><code># Close and reopen your terminal, OR run:
 source ~/.bashrc  # For bash
 # source ~/.zshrc  # For zsh
 
-# Verify conda is installed
+# Verify conda and mamba are installed
 conda --version
+mamba --version
+
+# For Mac OSX users, check your computer and conda CPU architecture and make sure they match
+uname -m
+conda info | grep subdir
 
 # You should see (base) in your prompt</code></pre>
             </div>
 
             <div class="step" data-step="4">
-                <h3>Configure Conda Channels</h3>
+                <h3>Configure Channels</h3>
                 <p>Add bioconda and conda-forge channels for bioinformatics packages.</p>
                 <pre><code># Add channels in correct priority order
-conda config --add channels defaults
 conda config --add channels bioconda
 conda config --add channels conda-forge
-
-# Set channel priority
-conda config --set channel_priority strict
-
-# Verify channels
-conda config --show channels</code></pre>
-            </div>
-
-            <div class="step" data-step="5">
-                <h3>Update Conda</h3>
-                <pre><code># Update conda to latest version
-conda update -n base -c defaults conda -y</code></pre>
+</code></pre>
             </div>
         </section>
 
         <section id="environment-setup">
             <h2>Step 3: Create Course Environment</h2>
-            <p>Create a dedicated conda environment with all required tools.</p>
+            <p>Create a dedicated environment with all required tools using mamba for faster installation.</p>
 
             <div class="step" data-step="1">
                 <h3>Create the Environment</h3>
-                <pre><code># Create environment with Python 3.9
-conda create -n bioinformatics_course python=3.9 -y
+                <pre><code># Create environment with Python 3.9 using mamba
+mamba create -n genomics python=3.11 -y
 
 # Activate the environment
-conda activate bioinformatics_course
+conda activate genomics
 
-# Your prompt should now show (bioinformatics_course)</code></pre>
+# Your prompt should now show (genomics)</code></pre>
             </div>
 
             <div class="step" data-step="2">
                 <h3>Install Bioinformatics Tools</h3>
-                <pre><code># Install core bioinformatics tools
-conda install -c bioconda \
-    fastqc \
-    fastp \
-    trim-galore \
-    cutadapt \
-    star \
-    samtools \
-    salmon \
-    subread \
-    multiqc \
-    sra-tools \
-    -y
+                <pre><code># Install core bioinformatics tools using mamba (faster than conda)
+mamba install -c conda-forge -c bioconda sra-tools fastqc fastp seqkit multiqc star salmon samtools igv -y
 
-# This may take several minutes</code></pre>
+# This typically takes 2-5 minutes with mamba</code></pre>
             </div>
 
             <div class="step" data-step="3">
                 <h3>Install Python Packages</h3>
                 <pre><code># Install Python data science packages
-conda install -c conda-forge \
-    pandas \
-    numpy \
-    matplotlib \
-    seaborn \
-    jupyter \
-    -y</code></pre>
+mamba install -c conda-forge -c bioconda pandas numpy matplotlib seaborn scikit-learn openpyxl gprofiler-official -y
+
+</code></pre>
             </div>
 
             <div class="step" data-step="4">
@@ -222,12 +200,24 @@ python -c "import pandas; import seaborn; print('Python packages OK')"</code></p
             <p>R is needed for DESeq2 and clusterProfiler analysis.</p>
 
             <div class="step" data-step="1">
-                <h3>Install R via Conda</h3>
+                <h3>Install R via Mamba</h3>
                 <pre><code># Make sure your environment is activated
-conda activate bioinformatics_course
+conda activate genomics
 
-# Install R
-conda install -c conda-forge r-base=4.2 -y</code></pre>
+# Install R and its packages using mamba
+
+mamba install -c conda-forge -c bioconda \
+    r-base=4.4 \
+    r-tidyverse \
+    r-biocmanager \
+    bioconductor-deseq2 \
+    bioconductor-tximport \
+    bioconductor-clusterprofiler \
+    bioconductor-org.hs.eg.db \
+    bioconductor-enrichplot \
+    r-pheatmap \
+    r-ggrepel
+</code></pre>
             </div>
 
             <div class="step" data-step="2">
@@ -237,17 +227,6 @@ R
 
 # Install BiocManager
 install.packages("BiocManager")
-
-# Install DESeq2
-BiocManager::install("DESeq2")
-
-# Install clusterProfiler and dependencies
-BiocManager::install(c(
-    "clusterProfiler",
-    "org.Hs.eg.db",
-    "enrichplot",
-    "DOSE"
-))
 
 # Install additional visualization packages
 install.packages(c("ggplot2", "pheatmap", "RColorBrewer"))
@@ -265,22 +244,10 @@ q()</code></pre>
         <section id="verify-setup">
             <h2>Step 5: Verify Complete Setup</h2>
             <p>Run this verification script to ensure everything is properly installed.</p>
-            <pre><code># Create and run verification script
-cat > verify_setup.sh << 'EOF'
-#!/bin/bash
-echo "=== Bioinformatics Course Environment Verification ==="
-echo ""
-
-echo "Checking conda environment..."
-if [[ "$CONDA_DEFAULT_ENV" == "bioinformatics_course" ]]; then
-    echo "✓ Conda environment active"
-else
-    echo "✗ Please activate: conda activate bioinformatics_course"
-fi
-echo ""
+            <pre><code>
 
 echo "Checking bioinformatics tools..."
-tools=("fastqc" "fastp" "STAR" "samtools" "salmon" "multiqc" "prefetch")
+tools=("fastqc" "fastp" "STAR" "salmon" "samtools" "multiqc" "seqkit")
 for tool in "${tools[@]}"; do
     if command -v $tool &> /dev/null; then
         echo "✓ $tool found"
@@ -288,7 +255,6 @@ for tool in "${tools[@]}"; do
         echo "✗ $tool NOT found"
     fi
 done
-echo ""
 
 echo "Checking Python packages..."
 python -c "
@@ -301,26 +267,19 @@ for pkg in packages:
     except ImportError:
         print(f'✗ {pkg} NOT found')
 "
-echo ""
 
 echo "Checking R packages..."
 Rscript -e "
-packages <- c('DESeq2', 'clusterProfiler', 'ggplot2')
+packages <- c('DESeq2', 'clusterProfiler', 'tximport', 'ggplot2')
 for (pkg in packages) {
     if (require(pkg, character.only=TRUE, quietly=TRUE)) {
         cat(paste('✓', pkg, '\n'))
     } else {
         cat(paste('✗', pkg, 'NOT found\n'))
     }
-}
-" 2>/dev/null
-echo ""
+}"
 
-echo "=== Verification Complete ==="
-EOF
-
-chmod +x verify_setup.sh
-./verify_setup.sh</code></pre>
+</code></pre>
         </section>
 
         <section id="troubleshooting">
@@ -336,7 +295,7 @@ chmod +x verify_setup.sh
             <div class="info-box warning">
                 <strong>Package conflicts during installation</strong>
                 <p>Try creating a fresh environment or install packages one at a time to identify conflicts:</p>
-                <pre><code>conda create -n bioinfo_fresh python=3.9 -y
+                <pre><code>conda create -n bioinfo_fresh python=3.11 -y
 conda activate bioinfo_fresh
 conda install -c bioconda fastqc -y
 # Continue with other packages...</code></pre>
@@ -358,18 +317,17 @@ sudo apt install -y libcurl4-openssl-dev libssl-dev libxml2-dev</code></pre>
             <h3>Getting Help</h3>
             <ul>
                 <li>Attend pre-program support sessions (Zoom links will be provided)</li>
-                <li>Check the course Slack channel for common issues</li>
-                <li>Email TAs with your error messages and system information</li>
+                <li>Email us with your error messages and system information</li>
             </ul>
         </section>
 
         <section>
             <h2>Quick Reference: Daily Commands</h2>
             <pre><code># Activate your environment (run this every time you open a new terminal)
-conda activate bioinformatics_course
+conda activate genomics
 
 # Navigate to your project directory
-cd ~/bioinformatics_course
+cd ~/genomics
 
 # Deactivate when done
 conda deactivate</code></pre>
@@ -424,7 +382,7 @@ tail -f logfile.txt     # Follow file updates in real-time
 less file.txt           # View with scrolling (q to quit)
 
 # View compressed files
-zcat file.gz            # View gzipped file
+gzcat file.gz            # View gzipped file
 zless file.gz           # View gzipped file with scrolling</code></pre>
 
                 <h3>File Information</h3>

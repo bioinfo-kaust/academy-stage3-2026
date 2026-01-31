@@ -49,7 +49,7 @@
                     <p>Explore RNA-seq datasets and sequencing reads. Learn to navigate and understand FASTQ file structure and content.</p>
                     <div class="tools-list">
                         <span class="tool-tag">SeqKit</span>
-                        <span class="tool-tag">zcat</span>
+                        <span class="tool-tag">gzcat</span>
                         <span class="tool-tag">awk</span>
                     </div>
                     <a href="lab2.html">Start Lab &rarr;</a>
@@ -62,46 +62,35 @@
             <div class="card-grid">
                 <div class="card lab-card">
                     <span class="tag">Lab 3</span>
-                    <h3>Quality Evaluation Hands-on</h3>
-                    <p>Run FastQC and fastp to inspect data quality metrics. Learn to interpret quality reports and identify potential issues.</p>
+                    <h3>Quality Control Hands-on</h3>
+                    <p>FastQC, fastp; inspect data quality metrics, trimming, adapter removal, pre/post-QC comparison</p>
                     <div class="tools-list">
                         <span class="tool-tag">FastQC</span>
                         <span class="tool-tag">fastp</span>
+                        <span class="tool-tag">multiQC</span>
                     </div>
                     <a href="lab3.html">Start Lab &rarr;</a>
                 </div>
                 <div class="card lab-card">
                     <span class="tag">Lab 4</span>
-                    <h3>Quality Control Hands-on</h3>
-                    <p>Apply trimming and adapter removal. Compare before/after quality metrics to verify improvements.</p>
-                    <div class="tools-list">
-                        <span class="tool-tag">Trim Galore</span>
-                        <span class="tool-tag">Cutadapt</span>
-                        <span class="tool-tag">fastp</span>
-                    </div>
-                    <a href="lab4.html">Start Lab &rarr;</a>
-                </div>
-                <div class="card lab-card">
-                    <span class="tag">Lab 5</span>
-                    <h3>RNA-seq Alignment Hands-on</h3>
+                    <h3>Genome Alignment Hands-on</h3>
                     <p>Align RNA-seq reads to a reference genome using STAR. Inspect BAM files and evaluate mapping statistics.</p>
                     <div class="tools-list">
                         <span class="tool-tag">STAR</span>
                         <span class="tool-tag">samtools</span>
                         <span class="tool-tag">IGV</span>
                     </div>
-                    <a href="lab5.html">Start Lab &rarr;</a>
+                    <a href="lab4.html">Start Lab &rarr;</a>
                 </div>
                 <div class="card lab-card">
-                    <span class="tag">Lab 6</span>
+                    <span class="tag">Lab 5</span>
                     <h3>Counting & Expression Matrix Construction</h3>
                     <p>Perform gene-level and transcript-level quantification. Build and inspect an expression matrix for downstream analysis.</p>
                     <div class="tools-list">
-                        <span class="tool-tag">Salmon</span>
-                        <span class="tool-tag">featureCounts</span>
+                        <span class="tool-tag">Salmon, tximport</span>
                         <span class="tool-tag">StringTie</span>
                     </div>
-                    <a href="lab6.html">Start Lab &rarr;</a>
+                    <a href="lab5.html">Start Lab &rarr;</a>
                 </div>
             </div>
         </section>
@@ -110,17 +99,17 @@
             <h2>Day 3: Downstream Analysis</h2>
             <div class="card-grid">
                 <div class="card lab-card">
-                    <span class="tag">Lab 7</span>
+                    <span class="tag">Lab 6</span>
                     <h3>Differential Expression Analysis</h3>
-                    <p>Run DESeq2 for differential expression analysis. Explore results with PCA and MA plots.</p>
+                    <p>Run DESeq2 for differential expression analysis.</p>
                     <div class="tools-list">
                         <span class="tool-tag">DESeq2</span>
                         <span class="tool-tag">R</span>
                     </div>
-                    <a href="lab7.html">Start Lab &rarr;</a>
+                    <a href="lab6.html">Start Lab &rarr;</a>
                 </div>
                 <div class="card lab-card">
-                    <span class="tag">Lab 8</span>
+                    <span class="tag">Lab 7</span>
                     <h3>Visualization & Integrated QC</h3>
                     <p>Generate publication-quality plots (heatmaps, boxplots) using seaborn. Aggregate QC reports with MultiQC.</p>
                     <div class="tools-list">
@@ -128,10 +117,10 @@
                         <span class="tool-tag">Python</span>
                         <span class="tool-tag">MultiQC</span>
                     </div>
-                    <a href="lab8.html">Start Lab &rarr;</a>
+                    <a href="lab7.html">Start Lab &rarr;</a>
                 </div>
                 <div class="card lab-card">
-                    <span class="tag">Lab 9</span>
+                    <span class="tag">Lab 8</span>
                     <h3>Enrichment Analysis in Practice</h3>
                     <p>Run GO/pathway enrichment analysis on differentially expressed genes. Interpret biological results and link to your research question.</p>
                     <div class="tools-list">
@@ -139,7 +128,7 @@
                         <span class="tool-tag">g:Profiler</span>
                         <span class="tool-tag">R / Python</span>
                     </div>
-                    <a href="lab9.html">Start Lab &rarr;</a>
+                    <a href="lab8.html">Start Lab &rarr;</a>
                 </div>
             </div>
         </section>
