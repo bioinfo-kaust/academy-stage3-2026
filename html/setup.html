@@ -98,24 +98,22 @@ sudo dnf install -y wget curl git gcc gcc-c++ make</code></pre>
             <p>We use <strong>Miniforge</strong> with <strong>mamba</strong> for faster and more reliable package installation. Miniforge comes with mamba pre-installed and works well on all platforms including Apple Silicon Macs.</p>
 
             <div class="step" data-step="1">
-                <h3>Download Miniforge</h3>
+                <h3>Download Miniforge and Install</h3>
                 <pre><code># Navigate to your home directory
 cd ~
 
 # For Linux (and Windows):
 curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+bash Miniforge3-Linux-x86_64.sh
 
 # For macOS (Apple Silicon M1/M2/M3) - RECOMMENDED:
 # curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
+bash Miniforge3-MacOSX-arm64.sh
 
 # For macOS (Intel):
 # curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh</code></pre>
-            </div>
+bash Miniforge3-MacOSX-x86_64.sh
 
-            <div class="step" data-step="2">
-                <h3>Install Miniforge</h3>
-                <pre><code># Run the installer (use your downloaded filename)
-bash Miniforge3-Linux-x86_64.sh
 
 # Follow the prompts:
 # - Press Enter to review license, then type 'yes' to accept
