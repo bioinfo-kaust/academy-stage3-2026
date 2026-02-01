@@ -206,7 +206,6 @@ python -c "import pandas; import seaborn; print('Python packages OK')"</code></p
 conda activate genomics
 
 # Install R and its packages using mamba
-
 mamba install -c conda-forge -c bioconda \
     r-base=4.4 \
     r-tidyverse \
@@ -217,29 +216,23 @@ mamba install -c conda-forge -c bioconda \
     bioconductor-org.hs.eg.db \
     bioconductor-enrichplot \
     r-pheatmap \
-    r-ggrepel
+    r-ggrepel \
+    r-ggplot2 \
+    r-pheatmap \
+    r-rcolorbrewer
+
+</code></pre>
+</div>
+<div class="step" data-step="4">
+    <h3>Verify R Installation</h3>
+    <pre><code>
+# Test if R packages installed successfully
+R -q -e "suppressWarnings({library(ggplot2); library(pheatmap); library(RColorBrewer); library(DESeq2); library(tximport); library(clusterProfiler)}); cat('All R packages loaded successfully\n')"
+
 </code></pre>
             </div>
 
-            <div class="step" data-step="2">
-                <h3>Install Bioconductor Packages</h3>
-                <pre><code># Start R
-R
-
-# Install BiocManager
-install.packages("BiocManager")
-
-# Install additional visualization packages
-install.packages(c("ggplot2", "pheatmap", "RColorBrewer"))
-
-# Test installations
-library(DESeq2)
-library(clusterProfiler)
-print("R packages installed successfully!")
-
-# Exit R
-q()</code></pre>
-            </div>
+           
         </section>
 
         <section id="verify-setup">
