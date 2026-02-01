@@ -1,0 +1,38 @@
+STAR version=                 2.7.11b
+STAR compilation time,server,dir= :/opt/mambaforge/envs/bioconda/conda-bld/star_1763121632674/work/source
+##### Command Line:
+STAR --runThreadN 4 --genomeDir star_index --readFilesIn trimmed_data/SRR975551_1.trimmed.fastq.gz trimmed_data/SRR975551_2.trimmed.fastq.gz --readFilesCommand zcat --outFileNamePrefix alignment/SRR975551_ --outSAMtype BAM SortedByCoordinate
+##### Initial USER parameters from Command Line:
+outFileNamePrefix                 alignment/SRR975551_
+###### All USER parameters from Command Line:
+runThreadN                    4     ~RE-DEFINED
+genomeDir                     star_index     ~RE-DEFINED
+readFilesIn                   trimmed_data/SRR975551_1.trimmed.fastq.gz   trimmed_data/SRR975551_2.trimmed.fastq.gz        ~RE-DEFINED
+readFilesCommand              zcat        ~RE-DEFINED
+outFileNamePrefix             alignment/SRR975551_     ~RE-DEFINED
+outSAMtype                    BAM   SortedByCoordinate        ~RE-DEFINED
+##### Finished reading parameters from all sources
+
+##### Final user re-defined parameters-----------------:
+runThreadN                        4
+genomeDir                         star_index
+readFilesIn                       trimmed_data/SRR975551_1.trimmed.fastq.gz   trimmed_data/SRR975551_2.trimmed.fastq.gz   
+readFilesCommand                  zcat   
+outFileNamePrefix                 alignment/SRR975551_
+outSAMtype                        BAM   SortedByCoordinate   
+
+-------------------------------
+##### Final effective command line:
+STAR   --runThreadN 4   --genomeDir star_index   --readFilesIn trimmed_data/SRR975551_1.trimmed.fastq.gz   trimmed_data/SRR975551_2.trimmed.fastq.gz      --readFilesCommand zcat      --outFileNamePrefix alignment/SRR975551_   --outSAMtype BAM   SortedByCoordinate   
+----------------------------------------
+
+Number of fastq files for each mate = 1
+
+   Input read files for mate 1 :
+!!!!! WARNING:  Could not ls trimmed_data/SRR975551_1.trimmed.fastq.gz
+ls: trimmed_data/SRR975551_1.trimmed.fastq.gz: No such file or directory
+
+EXITING: because of fatal INPUT file error: could not open read file: trimmed_data/SRR975551_1.trimmed.fastq.gz
+SOLUTION: check that this file exists and has read permision.
+
+Jan 31 10:23:49 ...... FATAL ERROR, exiting

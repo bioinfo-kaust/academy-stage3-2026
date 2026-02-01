@@ -18,4 +18,4 @@ Or cone this repository and open `index.html` locally in a browser.
 
 ## Tools
 
-FastQC, fastp, Trim Galore, STAR, samtools, Salmon, DESeq2, seaborn, MultiQC, ClusterProfiler, and other standard bioinformatics tools.
+FastQC, fastp, SeqKit, STAR, samtools, featureCounts, DESeq2, seaborn, MultiQC, clusterProfiler, and other standard bioinformatics tools.

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 5: RNA-seq Alignment Hands-on - Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">Bioinformatics Specialization Program - KAUST Academy</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="labs.html" class="active">Labs</a></li>
+                <li><a href="projects.html">Projects</a></li>
+                <li><a href="setup.html">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <div class="breadcrumbs">
+            <a href="../index.html">Home</a> / <a href="labs.html">Labs</a> / Lab 5
+        </div>
+
+        <div class="lab-header">
+            <h1>Lab 5: RNA-seq Alignment Hands-on</h1>
+            <p class="lab-meta">Day 2 | Duration: 45 minutes</p>
+        </div>
+
+        <section>
+            <h2>Objectives</h2>
+            <ul>
+                <li>Build a STAR genome index for alignment</li>
+                <li>Align RNA-seq reads to the reference genome</li>
+                <li>Inspect and understand BAM file format</li>
+                <li>Evaluate alignment quality and mapping statistics</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Background</h2>
+            <p>RNA-seq alignment is challenging because reads can span exon-exon junctions (spliced reads). STAR (Spliced Transcripts Alignment to a Reference) is a fast, splice-aware aligner designed specifically for RNA-seq data. It can identify novel splice junctions and handle reads that span multiple exons.</p>
+        </section>
+
+        <section>
+            <h2>Instructions</h2>
+
+            <div class="step" data-step="1">
+                <h3>Set up your environment</h3>
+                <pre><code># Navigate to project directory
+cd ~/bioinformatics_course
+
+# Activate conda environment
+conda activate bioinformatics_course
+
+# Create alignment output directory
+mkdir -p alignment
+
+# Verify tools are available
+STAR --version
+samtools --version</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Build STAR genome index</h3>
+                <p>Before alignment, STAR requires a genome index. This only needs to be done once per genome/annotation combination.</p>
+                <pre><code># Create index directory
+mkdir -p references/star_index
+
+# Generate STAR index
+STAR --runMode genomeGenerate \
+    --genomeDir references/star_index \
+    --genomeFastaFiles references/Homo_sapiens.GRCh38.dna.chromosome.22.fa \
+    --sjdbGTFfile references/Homo_sapiens.GRCh38.110.gtf \
+    --sjdbOverhang 99 \
+    --runThreadN 4
+
+# Parameters explained:
+# --runMode genomeGenerate: Build index mode
+# --genomeDir: Output directory for index
+# --genomeFastaFiles: Reference genome FASTA
+# --sjdbGTFfile: Gene annotation file
+# --sjdbOverhang: ReadLength - 1 (use 99 for 100bp reads)
+# --runThreadN: Number of threads</code></pre>
+                <div class="info-box warning">
+                    <strong>Note on Resources</strong>
+                    Building a full human genome index requires ~32GB RAM. For this course, we use chromosome 22 only, which requires much less memory.
+                </div>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Align reads with STAR</h3>
+                <p>Now we align our trimmed reads to the reference genome.</p>
+                <pre><code># Run STAR alignment
+STAR --runMode alignReads \
+    --genomeDir references/star_index \
+    --readFilesIn trimmed_data/sample_1_val_1.fq.gz trimmed_data/sample_2_val_2.fq.gz \
+    --readFilesCommand gzcat \
+    --outFileNamePrefix alignment/sample_ \
+    --outSAMtype BAM SortedByCoordinate \
+    --outSAMunmapped Within \
+    --quantMode GeneCounts \
+    --runThreadN 4
+
+# Key parameters:
+# --readFilesIn: Input FASTQ files (R1 R2 for paired-end)
+# --readFilesCommand gzcat: Decompress gzipped input on-the-fly
+# --outSAMtype BAM SortedByCoordinate: Output sorted BAM
+# --quantMode GeneCounts: Also output gene counts</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Examine STAR output files</h3>
+                <p>STAR produces several output files:</p>
+                <pre><code># List output files
+ls -lh alignment/sample_*
+
+# Output files:
+# sample_Aligned.sortedByCoord.out.bam - Sorted BAM file
+# sample_Log.final.out - Final alignment statistics
+# sample_Log.out - Detailed log
+# sample_ReadsPerGene.out.tab - Gene counts (if --quantMode GeneCounts)
+# sample_SJ.out.tab - Splice junctions detected</code></pre>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>View alignment statistics</h3>
+                <p>The Log.final.out file contains important mapping statistics.</p>
+                <pre><code># View alignment summary
+cat alignment/sample_Log.final.out
+
+# Key metrics to examine:
+# - Uniquely mapped reads %: Should be >70% for good quality
+# - % of reads mapped to multiple loci: High values may indicate repetitive regions
+# - % of reads unmapped: too short, other, etc.
+# - Mismatch rate per base: Should be low (<1%)</code></pre>
+
+                <div class="info-box tip">
+                    <strong>Quality Thresholds</strong>
+                    <ul>
+                        <li>Uniquely mapped: >70% is good, >80% is excellent</li>
+                        <li>Multi-mapped: <20% is typical</li>
+                        <li>Unmapped: <10% is acceptable</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="6">
+                <h3>Inspect BAM files with samtools</h3>
+                <p>BAM files are binary; use samtools to examine them.</p>
+                <pre><code># Index the BAM file (required for many operations)
+samtools index alignment/sample_Aligned.sortedByCoord.out.bam
+
+# View BAM header
+samtools view -H alignment/sample_Aligned.sortedByCoord.out.bam | head -20
+
+# View first few alignments
+samtools view alignment/sample_Aligned.sortedByCoord.out.bam | head -5
+
+# Get alignment statistics
+samtools flagstat alignment/sample_Aligned.sortedByCoord.out.bam
+
+# Get detailed statistics
+samtools stats alignment/sample_Aligned.sortedByCoord.out.bam | grep ^SN | cut -f 2-</code></pre>
+            </div>
+
+            <div class="step" data-step="7">
+                <h3>Understanding SAM/BAM format</h3>
+                <p>Each alignment record has 11 mandatory fields:</p>
+                <pre><code># SAM format fields:
+# 1. QNAME - Read name
+# 2. FLAG - Bitwise flag (e.g., 99 = paired, first read, properly aligned)
+# 3. RNAME - Reference sequence name (chromosome)
+# 4. POS - 1-based leftmost position
+# 5. MAPQ - Mapping quality
+# 6. CIGAR - Alignment description (e.g., 75M = 75 matches)
+# 7. RNEXT - Mate reference name
+# 8. PNEXT - Mate position
+# 9. TLEN - Template length
+# 10. SEQ - Read sequence
+# 11. QUAL - Quality scores
+
+# Example: Viewing specific fields
+samtools view alignment/sample_Aligned.sortedByCoord.out.bam | \
+    awk '{print $1, $2, $3, $4, $5, $6}' | head -10</code></pre>
+            </div>
+
+            <div class="step" data-step="8">
+                <h3>Filter alignments</h3>
+                <p>Often you need to filter alignments for downstream analysis.</p>
+                <pre><code># Keep only properly paired, uniquely mapped reads
+samtools view -b -q 10 -f 2 \
+    alignment/sample_Aligned.sortedByCoord.out.bam \
+    > alignment/sample_filtered.bam
+
+# Parameters:
+# -b: Output BAM format
+# -q 10: Minimum mapping quality 10
+# -f 2: Keep only properly paired reads
+
+# Index filtered BAM
+samtools index alignment/sample_filtered.bam
+
+# Compare read counts
+echo "Original:"
+samtools view -c alignment/sample_Aligned.sortedByCoord.out.bam
+echo "Filtered:"
+samtools view -c alignment/sample_filtered.bam</code></pre>
+            </div>
+
+            <div class="step" data-step="9">
+                <h3>Visualize alignments (Optional)</h3>
+                <p>IGV (Integrative Genomics Viewer) allows visual inspection of alignments.</p>
+                <pre><code># If IGV is installed and you have a graphical interface:
+# 1. Open IGV
+# 2. Load the reference genome (Genomes > Load Genome from File)
+# 3. Load the BAM file (File > Load from File)
+# 4. Navigate to a gene of interest
+
+# For command-line visualization, use samtools tview:
+samtools tview alignment/sample_Aligned.sortedByCoord.out.bam \
+    references/Homo_sapiens.GRCh38.dna.chromosome.22.fa</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you learned to:</p>
+            <ul>
+                <li>Build a STAR genome index for RNA-seq alignment</li>
+                <li>Align reads using STAR with appropriate parameters</li>
+                <li>Interpret alignment statistics and quality metrics</li>
+                <li>Use samtools to examine and filter BAM files</li>
+                <li>Understand SAM/BAM format structure</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Next Steps</h2>
+            <p>In <a href="lab6.html">Lab 6</a>, we will quantify gene expression by counting reads aligned to genes.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Bioinformatics Specialization Program 2026 - KAUST Academy</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>
