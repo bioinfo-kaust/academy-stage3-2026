@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environment Setup - Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">Bioinformatics Specialization Program - KAUST Academy</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="labs.html">Labs</a></li>
+                <li><a href="projects.html">Projects</a></li>
+                <li><a href="setup.html" class="active">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <h1>Environment Setup</h1>
+        <p>Complete these setup instructions before the program starts. If you encounter issues, attend one of our pre-program support sessions.</p>
+
+        <div class="info-box tip">
+            <strong>Quick Setup (Automated)</strong>
+            <p>If you already have Miniforge/Conda installed, you can use our automated setup script:</p>
+            <pre><code>cd code/
+./00_setup.sh</code></pre>
+            <p>This script will install mamba (if needed) and set up the complete environment automatically.</p>
+        </div>
+
+        <div class="info-box note">
+            <strong>Pre-Program Support Sessions</strong>
+            <ul>
+                <li>Sunday, February 2 at 2:00 PM (Zoom)</li>
+                <li>Monday, February 3 at 10:00 AM (Zoom)</li>
+            </ul>
+        </div>
+
+        <section id="linux-setup">
+            <h2>Step 1: Command Line Terminal Setup</h2>
+            <details><summary>For macOS Users</summary>
+            <p>macOS includes a built-in Terminal application with a Unix-based shell.</p>
+            <pre><code># Open Terminal
+# Applications > Utilities > Terminal
+# Or use Spotlight: Cmd + Space, type "Terminal"
+
+# Verify your shell
+echo $SHELL
+
+</code></pre>
+
+</details>
+            <details>
+            <summary>For Windows Users (WSL)</summary>
+            <p>Windows Subsystem for Linux (WSL) provides a Linux environment on Windows.</p>
+
+            <div class="step" data-step="1">
+                <h4>Enable WSL</h4>
+                <pre><code># Open PowerShell as Administrator and run:
+wsl --install
+
+# This installs WSL with Ubuntu by default
+# Restart your computer when prompted</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h4>Complete Ubuntu Setup</h4>
+                <pre><code># After restart, Ubuntu will launch automatically
+# Create a username and password when prompted
+
+# Update package lists
+sudo apt update
+sudo apt upgrade -y</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h4>Install Essential Tools</h4>
+                <pre><code># Install basic utilities
+sudo apt install -y wget curl git build-essential</code></pre>
+            </div>
+
+            <div class="info-box tip">
+                <strong>Accessing Windows Files from WSL</strong>
+                <p>Your Windows drives are mounted under <code>/mnt/</code>. For example, <code>C:\Users\YourName\Documents</code> is accessible at <code>/mnt/c/Users/YourName/Documents</code>.</p>
+            </div>
+            </details>
+            <details><summary>For Linux Users</summary>
+            <p>You likely already have a terminal. Ensure you have essential tools:</p>
+            <pre><code># Ubuntu/Debian
+sudo apt update
+sudo apt install -y wget curl git build-essential
+
+# Fedora/CentOS
+sudo dnf install -y wget curl git gcc gcc-c++ make</code></pre>
+</details>
+        </section>
+
+        <section id="conda-setup">
+            <h2>Step 2: Conda/Mamba Setup</h2>
+            <p>We use <strong>Miniforge</strong> with <strong>mamba</strong> for faster and more reliable package installation. Miniforge comes with mamba pre-installed and works well on all platforms including Apple Silicon Macs.</p>
+
+            <div class="step" data-step="1">
+                <h3>Download Miniforge</h3>
+                <pre><code># Navigate to your home directory
+cd ~
+
+# For Linux:
+curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+
+# For macOS (Apple Silicon M1/M2/M3) - RECOMMENDED:
+# curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
+
+# For macOS (Intel):
+# curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Install Miniforge</h3>
+                <pre><code># Run the installer (use your downloaded filename)
+bash Miniforge3-Linux-x86_64.sh
+
+# Follow the prompts:
+# - Press Enter to review license, then type 'yes' to accept
+# - Press Enter to accept default installation location
+# - Type 'yes' when asked to run 'conda init'</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Initialize and Verify</h3>
+                <pre><code># Close and reopen your terminal, OR run:
+source ~/.bashrc  # For bash
+# source ~/.zshrc  # For zsh
+
+# Verify conda and mamba are installed
+conda --version
+mamba --version
+
+# You should see (base) in your prompt</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Configure Channels</h3>
+                <p>Add bioconda and conda-forge channels for bioinformatics packages.</p>
+                <pre><code># Add channels in correct priority order
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+
+# Set channel priority
+conda config --set channel_priority strict</code></pre>
+            </div>
+        </section>
+
+        <section id="environment-setup">
+            <h2>Step 3: Create Course Environment</h2>
+            <p>Create a dedicated environment with all required tools using mamba for faster installation.</p>
+
+            <div class="step" data-step="1">
+                <h3>Create the Environment</h3>
+                <pre><code># Create environment with Python 3.9 using mamba
+mamba create -n bioinformatics_course python=3.9 -y
+
+# Activate the environment
+conda activate bioinformatics_course
+
+# Your prompt should now show (bioinformatics_course)</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Install Bioinformatics Tools</h3>
+                <pre><code># Install core bioinformatics tools using mamba (faster than conda)
+mamba install -c conda-forge -c bioconda \
+    fastqc \
+    fastp \
+    star \
+    samtools \
+    subread \
+    multiqc \
+    seqkit \
+    -y
+
+# This typically takes 2-5 minutes with mamba</code></pre>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Install Python Packages</h3>
+                <pre><code># Install Python data science packages
+mamba install -c conda-forge \
+    pandas \
+    scipy \
+    numpy \
+    matplotlib \
+    seaborn \
+    -y
+
+# Install additional packages via pip
+pip install gprofiler-official openpyxl</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Verify Installation</h3>
+                <pre><code># Test that tools are accessible
+fastqc --version
+fastp --version
+STAR --version
+samtools --version
+featureCounts -v
+multiqc --version
+
+# Test Python packages
+python -c "import pandas; import seaborn; print('Python packages OK')"</code></pre>
+            </div>
+        </section>
+
+        <section id="r-setup">
+            <h2>Step 4: R and Bioconductor Setup</h2>
+            <p>R is needed for DESeq2 and clusterProfiler analysis.</p>
+
+            <div class="step" data-step="1">
+                <h3>Install R via Mamba</h3>
+                <pre><code># Make sure your environment is activated
+conda activate bioinformatics_course
+
+# Install R using mamba
+mamba install -c conda-forge r-base=4.3 r-essentials -y</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Install Bioconductor Packages</h3>
+                <pre><code># Start R
+R
+
+# Install BiocManager
+install.packages("BiocManager")
+
+# Install DESeq2
+BiocManager::install("DESeq2")
+
+# Install clusterProfiler and dependencies
+BiocManager::install(c(
+    "clusterProfiler",
+    "org.Hs.eg.db",
+    "enrichplot",
+    "DOSE",
+    "tximport"
+))
+
+# Install additional visualization packages
+install.packages(c("ggplot2", "pheatmap", "RColorBrewer"))
+
+# Test installations
+library(DESeq2)
+library(clusterProfiler)
+print("R packages installed successfully!")
+
+# Exit R
+q()</code></pre>
+            </div>
+        </section>
+
+        <section id="verify-setup">
+            <h2>Step 5: Verify Complete Setup</h2>
+            <p>Run this verification script to ensure everything is properly installed.</p>
+            <pre><code># Create and run verification script
+cat > verify_setup.sh << 'EOF'
+#!/bin/bash
+echo "=== Bioinformatics Course Environment Verification ==="
+echo ""
+
+echo "Checking conda environment..."
+if [[ "$CONDA_DEFAULT_ENV" == "bioinformatics_course" ]]; then
+    echo "✓ Conda environment active"
+else
+    echo "✗ Please activate: conda activate bioinformatics_course"
+fi
+echo ""
+
+echo "Checking bioinformatics tools..."
+tools=("fastqc" "fastp" "STAR" "samtools" "featureCounts" "multiqc" "seqkit")
+for tool in "${tools[@]}"; do
+    if command -v $tool &> /dev/null; then
+        echo "✓ $tool found"
+    else
+        echo "✗ $tool NOT found"
+    fi
+done
+echo ""
+
+echo "Checking Python packages..."
+python -c "
+import sys
+packages = ['pandas', 'numpy', 'matplotlib', 'seaborn']
+for pkg in packages:
+    try:
+        __import__(pkg)
+        print(f'✓ {pkg}')
+    except ImportError:
+        print(f'✗ {pkg} NOT found')
+"
+echo ""
+
+echo "Checking R packages..."
+Rscript -e "
+packages <- c('DESeq2', 'clusterProfiler', 'ggplot2')
+for (pkg in packages) {
+    if (require(pkg, character.only=TRUE, quietly=TRUE)) {
+        cat(paste('✓', pkg, '\n'))
+    } else {
+        cat(paste('✗', pkg, 'NOT found\n'))
+    }
+}
+" 2>/dev/null
+echo ""
+
+echo "=== Verification Complete ==="
+EOF
+
+chmod +x verify_setup.sh
+./verify_setup.sh</code></pre>
+        </section>
+
+        <section id="troubleshooting">
+            <h2>Troubleshooting</h2>
+
+            <h3>Common Issues</h3>
+
+            <div class="info-box warning">
+                <strong>Conda command not found</strong>
+                <p>Run <code>source ~/.bashrc</code> or restart your terminal. If still not working, re-run <code>conda init bash</code>.</p>
+            </div>
+
+            <div class="info-box warning">
+                <strong>Package conflicts during installation</strong>
+                <p>Try creating a fresh environment or install packages one at a time to identify conflicts:</p>
+                <pre><code>conda create -n bioinfo_fresh python=3.9 -y
+conda activate bioinfo_fresh
+conda install -c bioconda fastqc -y
+# Continue with other packages...</code></pre>
+            </div>
+
+            <div class="info-box warning">
+                <strong>WSL: "Unable to locate package"</strong>
+                <p>Update your package lists:</p>
+                <pre><code>sudo apt update</code></pre>
+            </div>
+
+            <div class="info-box warning">
+                <strong>R package installation fails</strong>
+                <p>Try installing dependencies first:</p>
+                <pre><code># In terminal (not R)
+sudo apt install -y libcurl4-openssl-dev libssl-dev libxml2-dev</code></pre>
+            </div>
+
+            <h3>Getting Help</h3>
+            <ul>
+                <li>Attend pre-program support sessions (Zoom links will be provided)</li>
+                <li>Check the course Slack channel for common issues</li>
+                <li>Email TAs with your error messages and system information</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Quick Reference: Daily Commands</h2>
+            <pre><code># Activate your environment (run this every time you open a new terminal)
+conda activate bioinformatics_course
+
+# Navigate to your project directory
+cd ~/bioinformatics_course
+
+# Deactivate when done
+conda deactivate</code></pre>
+        </section>
+
+        <section>
+            <details>
+                <summary><h2 style="display: inline; cursor: pointer;">Linux Command Line Cheatsheet</h2></summary>
+
+                <h3>Navigation</h3>
+                <pre><code># Print current directory
+pwd
+
+# List files and directories
+ls              # Basic listing
+ls -l           # Detailed listing (permissions, size, date)
+ls -la          # Include hidden files (starting with .)
+ls -lh          # Human-readable file sizes
+
+# Change directory
+cd /path/to/dir     # Go to specific directory
+cd ~                # Go to home directory
+cd ..               # Go up one level
+cd -                # Go to previous directory</code></pre>
+
+                <h3>File Operations</h3>
+                <pre><code># Create files and directories
+mkdir mydir             # Create directory
+mkdir -p dir1/dir2      # Create nested directories
+touch file.txt          # Create empty file
+
+# Copy files
+cp file.txt backup.txt          # Copy file
+cp -r mydir/ mydir_backup/      # Copy directory recursively
+
+# Move/rename files
+mv oldname.txt newname.txt      # Rename file
+mv file.txt /path/to/dest/      # Move file
+
+# Remove files
+rm file.txt             # Delete file
+rm -r mydir/            # Delete directory recursively
+rm -i file.txt          # Ask before deleting</code></pre>
+
+                <h3>Viewing Files</h3>
+                <pre><code># Display file contents
+cat file.txt            # Show entire file
+head file.txt           # Show first 10 lines
+head -n 20 file.txt     # Show first 20 lines
+tail file.txt           # Show last 10 lines
+tail -f logfile.txt     # Follow file updates in real-time
+less file.txt           # View with scrolling (q to quit)
+
+# View compressed files
+gzcat file.gz            # View gzipped file
+zless file.gz           # View gzipped file with scrolling</code></pre>
+
+                <h3>File Information</h3>
+                <pre><code># Count lines, words, characters
+wc file.txt             # Lines, words, characters
+wc -l file.txt          # Lines only
+
+# File size
+du -h file.txt          # Size of file
+du -sh mydir/           # Total size of directory
+
+# Disk space
+df -h                   # Disk usage summary</code></pre>
+
+                <h3>Searching</h3>
+                <pre><code># Find files
+find . -name "*.fastq"          # Find by name pattern
+find . -type f -size +100M      # Find files larger than 100MB
+
+# Search file contents
+grep "pattern" file.txt         # Lines containing pattern
+grep -r "pattern" mydir/        # Search recursively in directory
+grep -i "pattern" file.txt      # Case-insensitive search
+grep -c "pattern" file.txt      # Count matching lines</code></pre>
+
+                <h3>Pipes and Redirection</h3>
+                <pre><code># Redirect output
+command > file.txt      # Write output to file (overwrite)
+command >> file.txt     # Append output to file
+command 2> error.txt    # Redirect errors to file
+
+# Pipes (send output to another command)
+cat file.txt | head             # First 10 lines
+cat file.txt | grep "pattern"   # Filter lines
+cat file.txt | wc -l            # Count lines
+cat file.txt | sort | uniq      # Sort and remove duplicates</code></pre>
+
+                <h3>Compression</h3>
+                <pre><code># Gzip
+gzip file.txt           # Compress (creates file.txt.gz)
+gunzip file.txt.gz      # Decompress
+
+# Tar archives
+tar -cvf archive.tar dir/       # Create archive
+tar -xvf archive.tar            # Extract archive
+tar -czvf archive.tar.gz dir/   # Create compressed archive
+tar -xzvf archive.tar.gz        # Extract compressed archive</code></pre>
+
+                <h3>Permissions</h3>
+                <pre><code># View permissions
+ls -l file.txt          # Shows -rw-r--r-- format
+
+# Change permissions
+chmod +x script.sh      # Make executable
+chmod 755 script.sh     # rwx for owner, rx for others
+
+# Change ownership
+chown user:group file.txt</code></pre>
+
+                <h3>Process Management</h3>
+                <pre><code># View running processes
+ps                      # Your processes
+ps aux                  # All processes
+top                     # Interactive process viewer (q to quit)
+htop                    # Better interactive viewer (if installed)
+
+# Control processes
+command &               # Run in background
+Ctrl+C                  # Stop current process
+Ctrl+Z                  # Suspend current process
+bg                      # Resume suspended process in background
+kill PID                # Terminate process by ID
+killall processname     # Terminate by name</code></pre>
+
+                <h3>Useful Shortcuts</h3>
+                <pre><code># Keyboard shortcuts
+Ctrl+C          # Cancel current command
+Ctrl+L          # Clear screen
+Ctrl+A          # Move cursor to start of line
+Ctrl+E          # Move cursor to end of line
+Ctrl+R          # Search command history
+Tab             # Auto-complete file/directory names
+Up/Down         # Navigate command history
+
+# History
+history                 # Show command history
+!123                    # Run command #123 from history
+!!                      # Repeat last command</code></pre>
+
+            </details>
+        </section>
+    </main>
+
+    <footer>
+        <p>Bioinformatics Specialization Program 2026 - KAUST Academy</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>
