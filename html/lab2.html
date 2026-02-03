@@ -29,8 +29,9 @@
             <ul>
                 <li>Understand the experimental dataset we will analyze</li>
                 <li>Understand the FASTQ file format in depth</li>
-                <li>Calculate basic statistics on  fastq files using SeqKit</li>
-                <li>Identify quality patterns in raw sequencing data</li>
+                <li>Obtain statistics on FASTQ files using SeqKit</li>
+                <li>Explore genome FASTA files with SeqKit</li>
+                <li>Use SeqKit for sequence manipulation and searching</li>
             </ul>
         </div>
         <section>
@@ -177,18 +178,139 @@ gzip -dc raw_data/KO_1_SRR10045016_2.fastq.gz | head -4
                 <pre><code>cd ~/genomics
 
 # Get statistics for one sample
-seqkit stats raw_data/KO_1_SRR10045016_1.fastq.gz
+seqkit stats raw_data/KO_1_SRR10045016_1.fastq.gz --threads 8
 
-# Get statistics for all samples
-seqkit stats raw_data/*.fastq.gz > stats.tsv
+# Get more detailed statistics for one sample
+seqkit stats -a raw_data/KO_1_SRR10045016_1.fastq.gz --threads 8
 
-# More detailed statistics
-seqkit stats -a raw_data/KO_1_SRR10045016_1.fastq.gz</code></pre>
+
+# Get more detailed statistics for All samples
+seqkit stats -a raw_data/*.fastq.gz --threads 8 > seqkit_stats.tsv</code></pre>
+
+<h3>Understand Stats on the fastq files</h3>
+<p>SeqKit reports multiple metrics on raw fastq files, open the <code>seqkit_stats.tsv</code> file and investigate the columns.</p>
             </div>
+        </section>
 
         <section>
-            
+            <h2>Part 6: Exploring Genome FASTA with SeqKit</h2>
+            <p>SeqKit can also be used to explore and manipulate reference genome FASTA files.</p>
 
+            <div class="step" data-step="4">
+                <h3>Get genome statistics</h3>
+                <pre><code>cd ~/genomics
+
+# Get statistics on the chromosome 11 genome file
+seqkit stats references/Homo_sapiens.GRCh38.dna.chromosome.11.fa
+
+# Get detailed statistics including GC content
+seqkit stats -a references/Homo_sapiens.GRCh38.dna.chromosome.11.fa
+
+# View the sequence header (chromosome name)
+seqkit seq -n references/Homo_sapiens.GRCh38.dna.chromosome.11.fa</code></pre>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Extract sequence regions</h3>
+                <pre><code># Get the first 1000 bases of chromosome 11
+seqkit subseq -r 1:1000 references/Homo_sapiens.GRCh38.dna.chromosome.11.fa
+
+# Extract a specific region (e.g., around the INS gene: 2159779-2161209)
+seqkit subseq -r 2159779:2161209 references/Homo_sapiens.GRCh38.dna.chromosome.11.fa
+
+# Get the length of each sequence in a FASTA file
+seqkit fx2tab -l -n references/Homo_sapiens.GRCh38.dna.chromosome.11.fa</code></pre>
+            </div>
+
+            <div class="step" data-step="6">
+                <h3>Calculate GC content and composition</h3>
+                <pre><code># Calculate GC content for the genome
+seqkit fx2tab -n -g references/Homo_sapiens.GRCh38.dna.chromosome.11.fa
+</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 7: Useful SeqKit Commands</h2>
+            <p>Here are additional SeqKit commands useful for bioinformatics workflows.</p>
+
+            <div class="step" data-step="7">
+                <h3>Subsample reads</h3>
+                <pre><code>cd ~/genomics
+
+# Randomly sample 10000 reads from a FASTQ file
+seqkit sample -n 10000 raw_data/KO_1_SRR10045016_1.fastq.gz -o subsampled_10k.fastq.gz
+
+# Sample a proportion (10%) of reads
+seqkit sample -p 0.1 raw_data/KO_1_SRR10045016_1.fastq.gz -o subsampled_10pct.fastq.gz
+
+# Sample with a specific seed for reproducibility
+seqkit sample -n 10000 -s 42 raw_data/KO_1_SRR10045016_1.fastq.gz -o subsampled_seed42.fastq.gz
+
+# Clean up test files
+rm -f subsampled_*.fastq.gz</code></pre>
+
+                <div class="info-box tip">
+                    <strong>When to Subsample?</strong>
+                    <p>Subsampling is useful for:</p>
+                    <ul>
+                        <li>Testing pipelines quickly before running on full data</li>
+                        <li>Debugging issues with smaller datasets</li>
+                        <li>Creating balanced datasets when samples have unequal depths</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="8">
+                <h3>Search for sequence patterns</h3>
+                <pre><code># Search for reads containing a specific sequence motif
+seqkit grep -s -p "AGATCGGAAG" raw_data/KO_1_SRR10045016_1.fastq.gz | head -20
+
+# Count reads containing adapter sequence (Illumina universal adapter)
+seqkit grep -s -p "AGATCGGAAGAGC" raw_data/KO_1_SRR10045016_1.fastq.gz | seqkit stats
+
+</code></pre>
+            </div>
+
+            <div class="step" data-step="9">
+                <h3>Sequence manipulation</h3>
+                <pre><code># Get reverse complement of sequences
+seqkit seq -r -p raw_data/KO_1_SRR10045016_1.fastq.gz | head -8
+
+# Extract only sequence IDs
+seqkit seq -n raw_data/KO_1_SRR10045016_1.fastq.gz | head -10
+
+# Get sequences within a length range
+seqkit seq -m 60 -M 80 raw_data/KO_1_SRR10045016_1.fastq.gz | seqkit stats</code></pre>
+            </div>
+
+            <div class="step" data-step="10">
+                <h3>Compare and deduplicate sequences</h3>
+                <pre><code># Remove duplicate sequences (by sequence content)
+seqkit rmdup -s raw_data/KO_1_SRR10045016_1.fastq.gz | seqkit stats
+
+# Find common sequences between two files (useful for checking paired-end sync)
+seqkit common -n raw_data/KO_1_SRR10045016_1.fastq.gz raw_data/KO_1_SRR10045016_2.fastq.gz | seqkit stats
+
+</code></pre>
+            </div>
+
+            <div class="card">
+                <h3>SeqKit Quick Reference</h3>
+                <table class="schedule-table">
+                    <tr><th>Command</th><th>Description</th></tr>
+                    <tr><td><code>seqkit stats</code></td><td>Get sequence statistics</td></tr>
+                    <tr><td><code>seqkit sample</code></td><td>Randomly subsample sequences</td></tr>
+                    <tr><td><code>seqkit grep</code></td><td>Search by ID or sequence pattern</td></tr>
+                    <tr><td><code>seqkit subseq</code></td><td>Extract subsequences by region</td></tr>
+                    <tr><td><code>seqkit seq</code></td><td>Transform sequences (reverse, complement)</td></tr>
+                    <tr><td><code>seqkit fx2tab</code></td><td>Convert FASTA/Q to tabular format</td></tr>
+                    <tr><td><code>seqkit fq2fa</code></td><td>Convert FASTQ to FASTA</td></tr>
+                    <tr><td><code>seqkit rmdup</code></td><td>Remove duplicate sequences</td></tr>
+                    <tr><td><code>seqkit common</code></td><td>Find common sequences between files</td></tr>
+                </table>
+                <p>For full documentation: <code>seqkit --help</code> or visit <a href="https://bioinf.shenwei.me/seqkit/" target="_blank">SeqKit documentation</a></p>
+            </div>
         </section>
 
         <section>
@@ -205,10 +327,10 @@ seqkit stats -a raw_data/KO_1_SRR10045016_1.fastq.gz</code></pre>
             <div class="card">
                 <h3>Exercise 2: Quality Investigation</h3>
                 <ol>
-                    <li>Find reads that start with 'N' (unknown base). How many are there in KO_1?
+                    <li>Find reads that start with 'N' (unknown base). How many are there in KO_1 and WT_1?
                         <pre><code>gzip -dc raw_data/KO_1_*_1.fastq.gz | awk 'NR%4==2 && /^N/' | wc -l</code></pre>
                     </li>
-                    <li>What percentage of reads have a quality score below 20 at position 1?</li>
+                    <li>What percentage of reads have a quality score below 20?</li>
                     <li>Compare the GC content between KO and WT samples. Is there a difference?</li>
                 </ol>
             </div>
@@ -230,8 +352,9 @@ seqkit stats -a raw_data/KO_1_SRR10045016_1.fastq.gz</code></pre>
                 <li>Covered the experimental dataset that we use in this course</li>
                 <li>Learned the FASTQ file format and Phred quality scores</li>
                 <li>Used gzip -dc to view compressed files</li>
-                <li>Applied SeqKit for sequence statistics</li>
-                <li>Compared sequencing depth across samples</li>
+                <li>Applied SeqKit for FASTQ and FASTA statistics</li>
+                <li>Explored genome sequences and extracted regions with SeqKit</li>
+                <li>Learned to subsample, search, and manipulate sequences</li>
             </ul>
             <p><strong>Next:</strong> <a href="lab3.html">Lab 3 - Quality Control Hands-on</a></p>
         </section>
