@@ -36,6 +36,7 @@
         <section>
             <h2>Environment Setup</h2>
             <p>Make sure you have the environment setup, see <a href="setup.html">setup instructions</a></p>
+            <p>Mac Users: if <code>wget</code> is not installed on your system please replacte it with <code>curl -O</code> in the commands nelow. or install <code>wget</code> in your conda environment<code>conda install wget</code></p>
         </section>
         <section>
             <h2>Part 1: Project Directory Setup</h2>
@@ -47,28 +48,23 @@
 conda activate genomics
 
 # Create main project directory
-cd ~
-mkdir -p genomics
-cd genomics
+mkdir ~/genomics
+cd ~/genomics
 
 # Create subdirectories for each analysis step
-mkdir -p subsampled_data
-mkdir -p trimmed_data
-mkdir -p references
-mkdir -p qc_reports/fastqc_raw
-mkdir -p qc_reports/fastqc_trimmed
-mkdir -p qc_reports/fastp
-mkdir -p alignment
-mkdir -p salmon_quant
-mkdir -p counts
-mkdir -p results/tables
-mkdir -p results/figures
-mkdir -p results/enrichment
-mkdir -p logs
+mkdir subsampled_data
+mkdir trimmed_data
+mkdir references
+#you can create multiple folders in the same command:
+mkdir -p qc_reports/fastqc_raw qc_reports/fastqc_trimmed qc_reports/fastp
+mkdir alignment
+mkdir salmon_quant
+mkdir counts
+mkdir -p results/tables results/figures results/enrichment
+mkdir logs
 
 # View the structure
-ls -la
-find . -type d | head -20</code></pre>
+tree</code></pre>
                 </div>
 
                 <div class="info-box note">
@@ -253,13 +249,21 @@ find . -type d | head -20</code></pre>
                     <li>Navigate to: <code>release-110/fasta/homo_sapiens/dna/</code></li>
                     <li>You will see several file types:
                         <ul>
-                            <li><code>Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz</code> - Full genome (primary assembly)</li>
+                            <li><code>Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz</code> - (primary assembly)</li>
                             <li><code>Homo_sapiens.GRCh38.dna.toplevel.fa.gz</code> - Includes alternate haplotypes</li>
                             <li><code>Homo_sapiens.GRCh38.dna.chromosome.*.fa.gz</code> - Individual chromosomes</li>
                         </ul>
                     </li>
                     <li>For this workshop, we download: <code>Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz</code></li>
                 </ol>
+                <h3>Download reference genome - chr11 only</h3>
+                <pre><code>cd ~/genomics/references
+
+# Download human chromosome 11 sequence
+echo "Downloading chromosome 11 genome..."
+wget https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz
+gunzip Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz
+</pre></code>
 
                 <div class="info-box note">
                     <strong>File Naming Convention</strong>
@@ -292,6 +296,18 @@ find . -type d | head -20</code></pre>
                     <strong>GTF vs GFF3</strong>
                     <p>Both formats contain gene annotations. GTF (Gene Transfer Format) is more commonly used with RNA-seq tools like STAR and featureCounts. GFF3 is the newer standard but not all tools support it equally.</p>
                 </div>
+                <h3>Download reference genome and annotation</h3>
+                <pre><code>cd ~/genomics/references
+# Download full GTF annotation
+echo "Downloading gene annotation..."
+wget https://ftp.ensembl.org/pub/release-110/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz
+gunzip Homo_sapiens.GRCh38.110.gtf.gz
+
+# Extract chromosome 11 annotations only
+echo "Extracting chr11 annotations..."
+grep -E "^#|^11	" Homo_sapiens.GRCh38.110.gtf > Homo_sapiens.GRCh38.110.chr11.gtf
+                        
+                    </pre></code>    
             </div>
 
             <div class="step" data-step="ensembl-6">
@@ -302,6 +318,13 @@ find . -type d | head -20</code></pre>
                     <li>Download: <code>Homo_sapiens.GRCh38.cdna.all.fa.gz</code></li>
                     <li>This file is used for transcript-level quantification with tools like Salmon and Kallisto</li>
                 </ol>
+                <h3>Download reference genome and annotation</h3>
+                <pre><code>cd ~/genomics/references
+# Download transcriptome and extract chr11 transcripts
+echo "Downloading transcriptome..."
+wget https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
+gunzip -c Homo_sapiens.GRCh38.cdna.all.fa.gz | awk '/^>/ {keep = /chromosome:GRCh38:11:/} keep' > transcriptome_chr11.fa
+                </pre></code>    
             </div>
 
             <div class="step" data-step="ensembl-7">
@@ -323,69 +346,6 @@ find . -type d | head -20</code></pre>
                         <li><strong>Compatibility:</strong> Ensure your tools support the chosen genome build (GRCh38 vs GRCh37)</li>
                         <li><strong>Publication:</strong> Check what version was used in related publications</li>
                     </ul>
-                </div>
-        </section>
-
-        <section>
-            <h2>Part 4: Download Reference Genome Files</h2>
-            <p>Now let's download the reference files using the command line. We need the human genome sequence (FASTA), gene annotation (GTF), and transcriptome for chromosome 11.</p>
-
-            <div class="step" data-step="3">
-                <h3>Download reference genome and annotation</h3>
-                <pre><code>cd ~/genomics/references
-
-# Download human chromosome 11 sequence
-echo "Downloading chromosome 11 genome..."
-wget https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz
-gunzip Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz
-
-# Download full GTF annotation
-echo "Downloading gene annotation..."
-wget https://ftp.ensembl.org/pub/release-110/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz
-gunzip Homo_sapiens.GRCh38.110.gtf.gz
-
-# Extract chromosome 11 annotations only
-echo "Extracting chr11 annotations..."
-grep -E "^#|^11	" Homo_sapiens.GRCh38.110.gtf > Homo_sapiens.GRCh38.110.chr11.gtf
-
-# Download transcriptome and extract chr11 transcripts
-echo "Downloading transcriptome..."
-wget https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
-gunzip -c Homo_sapiens.GRCh38.cdna.all.fa.gz | awk '/^>/ {keep = /chromosome:GRCh38:11:/} keep' > transcriptome_chr11.fa
-
-# Verify downloads
-ls -lh</code></pre>
-            </div>
-
-            <div class="step" data-step="4">
-                <h3>Create transcript-to-gene mapping file</h3>
-                <pre><code># Generate transcript ID to gene ID mapping from GTF
-# This is needed for tximport later
-
-cd ~/genomics/references
-
-awk -F'\t' '$3=="transcript" {
-  if (match($9, /gene_id "[^"]+"/)) {
-    gene = substr($9, RSTART, RLENGTH)
-    sub(/^gene_id "/, "", gene)
-    sub(/"$/, "", gene)
-  }
-  if (match($9, /transcript_id "[^"]+"/)) {
-    tx = substr($9, RSTART, RLENGTH)
-    sub(/^transcript_id "/, "", tx)
-    sub(/"$/, "", tx)
-  }
-  if (gene && tx) print tx "\t" gene
-}' Homo_sapiens.GRCh38.110.chr11.gtf > tx2gene.tsv
-
-# Add header
-sed -i '1i transcript_id\tgene_id' tx2gene.tsv  # Linux
-# For macOS: sed -i '' '1i\
-# transcript_id	gene_id' tx2gene.tsv
-
-# View first few lines
-head tx2gene.tsv
-wc -l tx2gene.tsv</code></pre>
                 </div>
         </section>
 
@@ -454,7 +414,39 @@ grep "gene_name \"INS\"" Homo_sapiens.GRCh38.110.chr11.gtf | head -5</code></pre
         </section>
 
         <section>
-            <h2>Part 6: Download Workshop Data - Prepare for Lab2</h2>
+                <h3>Part 6: Create transcript-to-gene mapping file - will be used later</h3>
+                <pre><code># Generate transcript ID to gene ID mapping from GTF
+# This is needed for tximport later
+
+cd ~/genomics/references
+
+awk -F'\t' '$3=="transcript" {
+  if (match($9, /gene_id "[^"]+"/)) {
+    gene = substr($9, RSTART, RLENGTH)
+    sub(/^gene_id "/, "", gene)
+    sub(/"$/, "", gene)
+  }
+  if (match($9, /transcript_id "[^"]+"/)) {
+    tx = substr($9, RSTART, RLENGTH)
+    sub(/^transcript_id "/, "", tx)
+    sub(/"$/, "", tx)
+  }
+  if (gene && tx) print tx "\t" gene
+}' Homo_sapiens.GRCh38.110.chr11.gtf > tx2gene.tsv
+
+# Add header
+sed -i '1i transcript_id\tgene_id' tx2gene.tsv  # Linux
+# For macOS: sed -i '' '1i\
+# transcript_id	gene_id' tx2gene.tsv
+
+# View first few lines
+head tx2gene.tsv
+wc -l tx2gene.tsv</code></pre>
+               
+        
+        </section>
+        <section>
+            <h2>Part 7: Download Workshop Data - Prepare for Lab2</h2>
             <p>The pre-processed chr11 subset data is provided for the workshop.</p>
 
             <div class="step" data-step="1">
@@ -464,10 +456,7 @@ grep "gene_name \"INS\"" Homo_sapiens.GRCh38.110.chr11.gtf | head -5</code></pre
 cd ~/genomics
 
 # Run wget to download
-wget https://zenodo.org/records/18462432/files/raw_data.zip?download=1
-
-# Move and Extract the downloaded FASTQ files
-mv raw_data.zip?download=1 raw_data.zip
+wget -bc https://zenodo.org/records/18462432/files/raw_data.zip
 
 unzip raw_data.zip
 
@@ -520,28 +509,13 @@ mv SRR10045021_2.fastq WT_3_SRR10045021_2.fastq
 gzip *.fastq</code></pre>
             </details>
         </section>
-        <section>
-            <h2>Part 7: Verify Your Setup</h2>
-            <div class="step" data-step="7">
-                <h3>Check all files are in place</h3>
-                <pre><code>cd ~/genomics
-
-echo "=== Checking FASTQ files ==="
-ls -lh raw_data/*.fastq.gz | wc -l
-# Should show 12 files
-
-echo ""
-echo "=== Checking reference files ==="
-ls -lh references/*.fa references/*.gtf reference/*.tsv
-
-echo ""
-echo "=== Directory structure ==="
-find . -type d | sort</code></pre>
-                </div>
-        </section>
-
+        
         <section>
             <h2>Exercises</h2>
+            <div class="card">
+                <h3>Check all files are in place</h3>
+                <p>revisit earlier commands to know what to use.</p>
+            </div>
             <div class="card">
                 <h3>Exercise 1: Explore the GTF file</h3>
                 <p>Use command-line tools to answer:</p>
