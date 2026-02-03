@@ -21,7 +21,561 @@
         </div>
     </nav>
 
-    
+    <main>
+        <h1>Lab 1: Warm-up for Large-scale Analysis & Genomic File Formats</h1>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Set up a structured project directory for RNA-seq analysis</li>
+                <li>Navigate NCBI GEO and SRA to find public RNA-seq datasets</li>
+                <li>Browse Ensembl to locate and download reference files</li>
+                <li>Understand genome reference file formats (FASTA and GTF)</li>
+            </ul>
+        </div>
+        <section>
+            <h2>Environment Setup</h2>
+            <p>Make sure you have the environment setup, see <a href="setup.html">setup instructions</a></p>
+        </section>
+        <section>
+            <h2>Part 1: Project Directory Setup</h2>
+            <p>A well-organized directory structure is essential for reproducible research.</p>
+
+                <div class="step" data-step="1">
+                    <h3>Create project directories</h3>
+                    <pre><code># Activate your environment
+conda activate genomics
+
+# Create main project directory
+cd ~
+mkdir -p genomics
+cd genomics
+
+# Create subdirectories for each analysis step
+mkdir -p subsampled_data
+mkdir -p trimmed_data
+mkdir -p references
+mkdir -p qc_reports/fastqc_raw
+mkdir -p qc_reports/fastqc_trimmed
+mkdir -p qc_reports/fastp
+mkdir -p alignment
+mkdir -p salmon_quant
+mkdir -p counts
+mkdir -p results/tables
+mkdir -p results/figures
+mkdir -p results/enrichment
+mkdir -p logs
+
+# View the structure
+ls -la
+find . -type d | head -20</code></pre>
+                </div>
+
+                <div class="info-box note">
+                    <strong>Directory Structure Explained</strong>
+                    <ul>
+                        <li><code>raw_data/</code> - Original FASTQ files from sequencing</li>
+                        <li><code>subsampled_data/</code> - Subsampled reads for faster processing</li>
+                        <li><code>trimmed_data/</code> - Quality-trimmed reads</li>
+                        <li><code>references/</code> - Genome, transcriptome, and annotation files</li>
+                        <li><code>qc_reports/</code> - Quality control reports (FastQC, fastp, MultiQC)</li>
+                        <li><code>alignment/</code> - BAM files from STAR alignment</li>
+                        <li><code>salmon_quant/</code> - Transcript quantification results</li>
+                        <li><code>counts/</code> - Gene-level count matrices</li>
+                        <li><code>results/</code> - Final analysis outputs (tables, figures, enrichment)</li>
+                    </ul>
+                </div>
+        </section>
+        <section>
+            <h2>Part 2: Finding Raw Genomics Datasets on NCBI</h2>
+            <p>Before working with any public dataset, it's important to know how to find and access it from NCBI. Here's a step-by-step guide to locating GSE136366 and its raw sequencing files.</p>
+
+                <div class="step" data-step="ncbi-1">
+                <h3>Step 1: Navigate to NCBI GEO</h3>
+                <p>NCBI GEO (Gene Expression Omnibus) is a public repository for gene expression data, including RNA-seq datasets.</p>
+                <ol>
+                    <li>Open your web browser and go to <a href="https://www.ncbi.nlm.nih.gov/geo/" target="_blank">https://www.ncbi.nlm.nih.gov/geo/</a></li>
+                    <li>You will see the GEO homepage with a search box at the top</li>
+                </ol>
+            </div>
+
+            <div class="step" data-step="ncbi-2">
+                <h3>Step 2: Search for the Dataset</h3>
+                <ol>
+                    <li>In the search box, type the accession number: <code>GSE136366</code></li>
+                    <li>Click "Search" or press Enter</li>
+                    <li>The search results will show the dataset: "TDP-43 regulates LC3ylation..."</li>
+                    <li>Click on the accession number <strong>GSE136366</strong> to view the full record</li>
+                </ol>
+            </div>
+
+            <div class="step" data-step="ncbi-3">
+                <h3>Step 3: Explore the GEO Series Page</h3>
+                <p>The GEO Series page contains important information about the dataset:</p>
+                <ul>
+                    <li><strong>Title:</strong> Full study title and description</li>
+                    <li><strong>Summary:</strong> Experimental design and objectives</li>
+                    <li><strong>Overall design:</strong> Sample information and conditions</li>
+                    <li><strong>Contributors:</strong> Authors and their affiliations</li>
+                    <li><strong>Citation:</strong> Link to the published paper</li>
+                    <li><strong>Samples:</strong> List of all individual samples (GSM accessions)</li>
+                </ul>
+            </div>
+
+            <div class="step" data-step="ncbi-4">
+                <h3>Step 4: Find the SRA Data</h3>
+                <p>To download the raw FASTQ files, we need to access the SRA (Sequence Read Archive):</p>
+                <ol>
+                    <li>Scroll down to the <strong>"Relations"</strong> section on the GEO page</li>
+                    <li>Look for the link labeled <strong>"SRA"</strong> with accession <code>SRP219898</code></li>
+                    <li>Click on the SRA link to navigate to the SRA page</li>
+                </ol>
+                <p>Alternatively, scroll to the <strong>"Samples"</strong> section and click on any sample (e.g., GSM4047073) to see its individual SRA run.</p>
+            </div>
+
+            <div class="step" data-step="ncbi-5">
+                <h3>Step 5: Navigate the SRA Run Selector</h3>
+                <p>The SRA Run Selector allows you to view and download individual sequencing runs:</p>
+                <ol>
+                    <li>On the SRA page, click "Send results to Run selector" (if not already there)</li>
+                    <li>You will see a table listing all 6 runs (SRR10045016 - SRR10045021)</li>
+                    <li>The table shows important metadata:
+                        <ul>
+                            <li><strong>Run:</strong> The SRR accession number</li>
+                            <li><strong>Sample:</strong> Sample name from the study</li>
+                            <li><strong>LibraryLayout:</strong> PAIRED (paired-end sequencing)</li>
+                            <li><strong>Bases:</strong> Total sequencing bases</li>
+                            <li><strong>Spots:</strong> Number of reads</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+
+            <div class="step" data-step="ncbi-6">
+                <h3>Step 6: Identify Sample-to-Accession Mapping</h3>
+                <p>From the SRA Run Selector, you can determine which SRR accession corresponds to each sample:</p>
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>GEO Sample</th>
+                            <th>SRA Run</th>
+                            <th>Sample Name</th>
+                            <th>Condition</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>GSM4047073</td><td>SRR10045016</td><td>TDP43_KO1</td><td>Knockout Rep 1</td></tr>
+                        <tr><td>GSM4047074</td><td>SRR10045017</td><td>TDP43_KO2</td><td>Knockout Rep 2</td></tr>
+                        <tr><td>GSM4047075</td><td>SRR10045018</td><td>TDP43_KO3</td><td>Knockout Rep 3</td></tr>
+                        <tr><td>GSM4047076</td><td>SRR10045019</td><td>TDP43_WT1</td><td>Wildtype Rep 1</td></tr>
+                        <tr><td>GSM4047077</td><td>SRR10045020</td><td>TDP43_WT2</td><td>Wildtype Rep 2</td></tr>
+                        <tr><td>GSM4047078</td><td>SRR10045021</td><td>TDP43_WT3</td><td>Wildtype Rep 3</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="step" data-step="ncbi-7">
+                <h3>Step 7: Download Options</h3>
+                <p>There are several ways to download the FASTQ files, including:</p>
+
+                <div class="card">
+                    <h4>Option A: Using SRA Toolkit (Recommended for large files)</h4>
+                    <p>Use command-line tools <code>prefetch</code> and <code>fasterq-dump</code> as shown in the "Alternative" section below.</p>
+                </div>
+
+                <div class="card">
+                    <h4>Option B: Direct Download from ENA</h4>
+                    <p>The European Nucleotide Archive (ENA) often provides direct FASTQ download links:</p>
+                    <ol>
+                        <li>Go to <a href="https://www.ebi.ac.uk/ena/browser/view/SRR10045016" target="_blank">ENA</a></li>
+                        <li>Search for the SRR accession</li>
+                        <li>Click "FASTQ files (FTP)" to download directly</li>
+                    </ol>
+                </div>
+            </div>
+
+                <div class="info-box tip">
+                    <strong>Tip: Always Check the Metadata!</strong>
+                    <p>Before downloading any dataset, review:</p>
+                    <ul>
+                        <li>Sequencing platform (Illumina, PacBio, Nanopore, etc.)</li>
+                        <li>Library layout (single-end vs paired-end)</li>
+                        <li>Read length and total read count</li>
+                        <li>Any quality or processing notes</li>
+                    </ul>
+                    <p>This information affects your analysis pipeline choices!</p>
+                </div>
+        </section>
+
+        <section>
+            <h2>Part 3: Finding Reference Genome Files on Ensembl</h2>
+            <p>Ensembl is a genome browser and database that provides reference sequences and annotations for many species. Here's how to navigate Ensembl to find the files we need.</p>
+
+            <div class="step" data-step="ensembl-1">
+                <h3>Step 1: Navigate to Ensembl</h3>
+                <ol>
+                    <li>Open your browser and go to <a href="https://www.ensembl.org" target="_blank">https://www.ensembl.org</a></li>
+                    <li>The homepage shows featured species and a search box</li>
+                    <li>Click on <strong>"Human"</strong> in the popular species section, or search for "Homo sapiens"</li>
+                </ol>
+            </div>
+
+            <div class="step" data-step="ensembl-2">
+                <h3>Step 2: Access the FTP Download Site</h3>
+                <p>Reference files are available through Ensembl's FTP server:</p>
+                <ol>
+                    <li>From the Ensembl homepage, click <strong>"Downloads"</strong> in the top navigation menu</li>
+                    <li>Select <strong>"Download data via FTP"</strong></li>
+                    <li>Alternatively, go directly to: <a href="https://ftp.ensembl.org/pub/" target="_blank">https://ftp.ensembl.org/pub/</a></li>
+                </ol>
+            </div>
+
+            <div class="step" data-step="ensembl-3">
+                <h3>Step 3: Understand the FTP Directory Structure</h3>
+                <p>The Ensembl FTP site is organized by release version and data type:</p>
+                <pre><code>ftp.ensembl.org/pub/
+├── release-110/              # Release version (we use 110)
+│   ├── fasta/                # Sequence files
+│   │   └── homo_sapiens/
+│   │       ├── dna/          # Genomic DNA sequences
+│   │       ├── cdna/         # Transcriptome (cDNA)
+│   │       └── pep/          # Protein sequences
+│   ├── gtf/                  # Gene annotation files
+│   │   └── homo_sapiens/
+│   └── gff3/                 # Alternative annotation format
+└── current_fasta/            # Symlink to latest release</code></pre>
+            </div>
+
+            <div class="step" data-step="ensembl-4">
+                <h3>Step 4: Find the Genome FASTA Files</h3>
+                <p>To download genomic DNA sequences:</p>
+                <ol>
+                    <li>Navigate to: <code>release-110/fasta/homo_sapiens/dna/</code></li>
+                    <li>You will see several file types:
+                        <ul>
+                            <li><code>Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz</code> - Full genome (primary assembly)</li>
+                            <li><code>Homo_sapiens.GRCh38.dna.toplevel.fa.gz</code> - Includes alternate haplotypes</li>
+                            <li><code>Homo_sapiens.GRCh38.dna.chromosome.*.fa.gz</code> - Individual chromosomes</li>
+                        </ul>
+                    </li>
+                    <li>For this workshop, we download: <code>Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz</code></li>
+                </ol>
+
+                <div class="info-box note">
+                    <strong>File Naming Convention</strong>
+                    <p><code>Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz</code></p>
+                    <ul>
+                        <li><strong>Homo_sapiens</strong> - Species name</li>
+                        <li><strong>GRCh38</strong> - Genome assembly version (Genome Reference Consortium Human Build 38)</li>
+                        <li><strong>dna</strong> - DNA sequence type</li>
+                        <li><strong>chromosome.11</strong> - Specific chromosome</li>
+                        <li><strong>.fa.gz</strong> - FASTA format, gzip compressed</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="ensembl-5">
+                <h3>Step 5: Find the GTF Annotation Files</h3>
+                <p>Gene annotations provide coordinates and metadata for genes, transcripts, and exons:</p>
+                <ol>
+                    <li>Navigate to: <code>release-110/gtf/homo_sapiens/</code></li>
+                    <li>The main annotation file is: <code>Homo_sapiens.GRCh38.110.gtf.gz</code></li>
+                    <li>You may also see:
+                        <ul>
+                            <li><code>Homo_sapiens.GRCh38.110.chr.gtf.gz</code> - Chromosomes only (no scaffolds)</li>
+                            <li><code>Homo_sapiens.GRCh38.110.abinitio.gtf.gz</code> - Ab initio predictions</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <div class="info-box note">
+                    <strong>GTF vs GFF3</strong>
+                    <p>Both formats contain gene annotations. GTF (Gene Transfer Format) is more commonly used with RNA-seq tools like STAR and featureCounts. GFF3 is the newer standard but not all tools support it equally.</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="ensembl-6">
+                <h3>Step 6: Find the Transcriptome (cDNA) Files</h3>
+                <p>The transcriptome contains sequences of all annotated transcripts:</p>
+                <ol>
+                    <li>Navigate to: <code>release-110/fasta/homo_sapiens/cdna/</code></li>
+                    <li>Download: <code>Homo_sapiens.GRCh38.cdna.all.fa.gz</code></li>
+                    <li>This file is used for transcript-level quantification with tools like Salmon and Kallisto</li>
+                </ol>
+            </div>
+
+            <div class="step" data-step="ensembl-7">
+                <h3>Step 7: Check Release Notes</h3>
+                <p>Before downloading, it's good practice to check release notes for any important changes:</p>
+                <ol>
+                    <li>Go to <a href="https://www.ensembl.org/info/website/news.html" target="_blank">Ensembl News</a></li>
+                    <li>Review what's new in your chosen release</li>
+                    <li>Check for known issues or updates to gene annotations</li>
+                </ol>
+            </div>
+
+                <div class="info-box tip">
+                    <strong>Choosing the Right Release</strong>
+                    <p>When starting a project, consider:</p>
+                    <ul>
+                        <li><strong>Consistency:</strong> Use the same release for all analyses in a project</li>
+                        <li><strong>Reproducibility:</strong> Document the exact release version used</li>
+                        <li><strong>Compatibility:</strong> Ensure your tools support the chosen genome build (GRCh38 vs GRCh37)</li>
+                        <li><strong>Publication:</strong> Check what version was used in related publications</li>
+                    </ul>
+                </div>
+        </section>
+
+        <section>
+            <h2>Part 4: Download Reference Genome Files</h2>
+            <p>Now let's download the reference files using the command line. We need the human genome sequence (FASTA), gene annotation (GTF), and transcriptome for chromosome 11.</p>
+
+            <div class="step" data-step="3">
+                <h3>Download reference genome and annotation</h3>
+                <pre><code>cd ~/genomics/references
+
+# Download human chromosome 11 sequence
+echo "Downloading chromosome 11 genome..."
+wget https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz
+gunzip Homo_sapiens.GRCh38.dna.chromosome.11.fa.gz
+
+# Download full GTF annotation
+echo "Downloading gene annotation..."
+wget https://ftp.ensembl.org/pub/release-110/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz
+gunzip Homo_sapiens.GRCh38.110.gtf.gz
+
+# Extract chromosome 11 annotations only
+echo "Extracting chr11 annotations..."
+grep -E "^#|^11	" Homo_sapiens.GRCh38.110.gtf > Homo_sapiens.GRCh38.110.chr11.gtf
+
+# Download transcriptome and extract chr11 transcripts
+echo "Downloading transcriptome..."
+wget https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
+gunzip -c Homo_sapiens.GRCh38.cdna.all.fa.gz | awk '/^>/ {keep = /chromosome:GRCh38:11:/} keep' > transcriptome_chr11.fa
+
+# Verify downloads
+ls -lh</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Create transcript-to-gene mapping file</h3>
+                <pre><code># Generate transcript ID to gene ID mapping from GTF
+# This is needed for tximport later
+
+cd ~/genomics/references
+
+awk -F'\t' '$3=="transcript" {
+  if (match($9, /gene_id "[^"]+"/)) {
+    gene = substr($9, RSTART, RLENGTH)
+    sub(/^gene_id "/, "", gene)
+    sub(/"$/, "", gene)
+  }
+  if (match($9, /transcript_id "[^"]+"/)) {
+    tx = substr($9, RSTART, RLENGTH)
+    sub(/^transcript_id "/, "", tx)
+    sub(/"$/, "", tx)
+  }
+  if (gene && tx) print tx "\t" gene
+}' Homo_sapiens.GRCh38.110.chr11.gtf > tx2gene.tsv
+
+# Add header
+sed -i '1i transcript_id\tgene_id' tx2gene.tsv  # Linux
+# For macOS: sed -i '' '1i\
+# transcript_id	gene_id' tx2gene.tsv
+
+# View first few lines
+head tx2gene.tsv
+wc -l tx2gene.tsv</code></pre>
+                </div>
+        </section>
+
+        <section>
+            <h2>Part 5: Exploring Genomic File Formats</h2>
+
+            <div class="step" data-step="5">
+                <h3>Explore FASTA format (genome sequence)</h3>
+                <pre><code>cd ~/genomics/references
+
+# View the first 10 lines of the genome file
+head -10 Homo_sapiens.GRCh38.dna.chromosome.11.fa
+
+# The first line starts with > and contains the sequence name
+# Subsequent lines contain the DNA sequence (A, T, G, C, N)
+
+# Count total bases (excluding header)
+grep -v "^>" Homo_sapiens.GRCh38.dna.chromosome.11.fa | tr -d '\n' | wc -c
+
+# Chromosome 11 is approximately 135 million base pairs</code></pre>
+
+                <div class="info-box note">
+                    <strong>FASTA Format</strong>
+                    <pre><code>>chromosome_name description
+ATGCATGCATGCATGCATGCATGCATGC...
+GCTAGCTAGCTAGCTAGCTAGCTAGCTA...</code></pre>
+                    <p>Header lines start with <code>></code>, followed by sequence on subsequent lines (typically 60-80 characters per line).</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="6">
+                <h3>Explore GTF format (gene annotation)</h3>
+                <pre><code>cd ~/genomics/references
+
+# View header comments and first few data lines
+head -50 Homo_sapiens.GRCh38.110.chr11.gtf
+
+# Count different feature types
+echo "Feature types in GTF:"
+cut -f3 Homo_sapiens.GRCh38.110.chr11.gtf | grep -v "^#" | sort | uniq -c | sort -rn
+
+# Count genes on chromosome 11
+echo "Number of genes:"
+awk '$3 == "gene"' Homo_sapiens.GRCh38.110.chr11.gtf | wc -l
+
+# Find a specific gene (e.g., TARDBP - the TDP-43 gene, though it's on chr1)
+# Let's look at a chr11 gene: INS (insulin)
+grep "gene_name \"INS\"" Homo_sapiens.GRCh38.110.chr11.gtf | head -5</code></pre>
+
+                <div class="info-box note">
+                    <strong>GTF Format - 9 Tab-Separated Columns</strong>
+                    <table class="schedule-table">
+                        <tr><th>Column</th><th>Description</th><th>Example</th></tr>
+                        <tr><td>1</td><td>Chromosome</td><td>11</td></tr>
+                        <tr><td>2</td><td>Source</td><td>ensembl_havana</td></tr>
+                        <tr><td>3</td><td>Feature type</td><td>gene, transcript, exon, CDS</td></tr>
+                        <tr><td>4</td><td>Start position</td><td>2159779</td></tr>
+                        <tr><td>5</td><td>End position</td><td>2161209</td></tr>
+                        <tr><td>6</td><td>Score</td><td>.</td></tr>
+                        <tr><td>7</td><td>Strand</td><td>+ or -</td></tr>
+                        <tr><td>8</td><td>Frame</td><td>0, 1, 2, or .</td></tr>
+                        <tr><td>9</td><td>Attributes</td><td>gene_id; gene_name; etc.</td></tr>
+                    </table>
+                    </div>
+                </div>
+        </section>
+
+        <section>
+            <h2>Part 6: Download Workshop Data - Prepare for Lab2</h2>
+            <p>The pre-processed chr11 subset data is provided for the workshop.</p>
+
+            <div class="step" data-step="1">
+                <h3>Download the FASTQ raw files</h3>
+                <pre><code># The data is available under the following path
+
+cd ~/genomics
+
+# Run wget to download
+wget https://zenodo.org/records/18462432/files/raw_data.zip?download=1
+
+# Move and Extract the downloaded FASTQ files
+mv raw_data.zip?download=1 raw_data.zip
+
+unzip raw_data.zip
+
+# Verify the files
+ls -lh raw_data/
+
+# You should see 12 files (6 samples × 2 paired-end files):
+# KO_1_SRR10045016_1.fastq.gz  KO_1_SRR10045016_2.fastq.gz
+# KO_2_SRR10045017_1.fastq.gz  KO_2_SRR10045017_2.fastq.gz
+# KO_3_SRR10045018_1.fastq.gz  KO_3_SRR10045018_2.fastq.gz
+# WT_1_SRR10045019_1.fastq.gz  WT_1_SRR10045019_2.fastq.gz
+# WT_2_SRR10045020_1.fastq.gz  WT_2_SRR10045020_2.fastq.gz
+# WT_3_SRR10045021_1.fastq.gz  WT_3_SRR10045021_2.fastq.gz</code></pre>
+            </div>
+
+            <details>
+                <summary><h3 style="display: inline; cursor: pointer;">Alternative: Download Full Dataset from NCBI SRA</h3></summary>
+                <div class="info-box warning">
+                    <strong>Note:</strong> This downloads the complete dataset (~20 million reads per sample). Only use this if you have sufficient time and disk space (~50 GB).
+                </div>
+                <pre><code># Configure SRA Toolkit (first time only)
+mkdir -p ~/ncbi/public
+vdb-config --root -s "/repository/user/main/public/root=$HOME/ncbi/public"
+
+# Download all 6 samples using prefetch (faster, downloads .sra files) - more than >100GB of disk is needed
+cd ~/genomics/raw_data
+
+# Download in parallel (6 samples simultaneously)
+printf "%s\n" SRR10045016 SRR10045017 SRR10045018 SRR10045019 SRR10045020 SRR10045021 \
+    | xargs -n 1 -P 6 prefetch --progress
+
+# Convert .sra to FASTQ format (paired-end)
+fasterq-dump --split-files --threads 8 --progress SRR*/*.sra
+
+# Rename files to include sample names
+mv SRR10045016_1.fastq KO_1_SRR10045016_1.fastq
+mv SRR10045016_2.fastq KO_1_SRR10045016_2.fastq
+mv SRR10045017_1.fastq KO_2_SRR10045017_1.fastq
+mv SRR10045017_2.fastq KO_2_SRR10045017_2.fastq
+mv SRR10045018_1.fastq KO_3_SRR10045018_1.fastq
+mv SRR10045018_2.fastq KO_3_SRR10045018_2.fastq
+mv SRR10045019_1.fastq WT_1_SRR10045019_1.fastq
+mv SRR10045019_2.fastq WT_1_SRR10045019_2.fastq
+mv SRR10045020_1.fastq WT_2_SRR10045020_1.fastq
+mv SRR10045020_2.fastq WT_2_SRR10045020_2.fastq
+mv SRR10045021_1.fastq WT_3_SRR10045021_1.fastq
+mv SRR10045021_2.fastq WT_3_SRR10045021_2.fastq
+
+# Compress the files
+gzip *.fastq</code></pre>
+            </details>
+        </section>
+        <section>
+            <h2>Part 7: Verify Your Setup</h2>
+            <div class="step" data-step="7">
+                <h3>Check all files are in place</h3>
+                <pre><code>cd ~/genomics
+
+echo "=== Checking FASTQ files ==="
+ls -lh raw_data/*.fastq.gz | wc -l
+# Should show 12 files
+
+echo ""
+echo "=== Checking reference files ==="
+ls -lh references/*.fa references/*.gtf reference/*.tsv
+
+echo ""
+echo "=== Directory structure ==="
+find . -type d | sort</code></pre>
+                </div>
+        </section>
+
+        <section>
+            <h2>Exercises</h2>
+            <div class="card">
+                <h3>Exercise 1: Explore the GTF file</h3>
+                <p>Use command-line tools to answer:</p>
+                <ol>
+                    <li>How many exons are annotated on chromosome 11?</li>
+                    <li>How many protein-coding genes are there? (Hint: look for <code>gene_biotype "protein_coding"</code>)</li>
+                    <li>What is the longest gene on chromosome 11?</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 2: NCBI GEO Exploration</h3>
+                <p>Visit <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE136366" target="_blank">GSE136366 on NCBI GEO</a> and find:</p>
+                <ol>
+                    <li>The original publication title and authors</li>
+                    <li>The library preparation method used</li>
+                    <li>Any supplementary files provided by the authors</li>
+                </ol>
+            </div>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you have:</p>
+            <ul>
+                <li>Created an organized project directory structure</li>
+                <li>Learned how to navigate NCBI GEO and SRA to find RNA-seq datasets</li>
+                <li>Learned how to browse Ensembl to find reference genome and annotation files</li>
+                <li>Downloaded reference genome and annotation files for chromosome 11</li>
+                <li>Explored FASTA and GTF file formats</li>
+            </ul>
+            <p><strong>Next:</strong> <a href="lab2.html">Lab 2 - Hands-on with Transcriptomics Data</a></p>
+        </section>
+    </main>
 
     <footer>
         <p>Bioinformatics Specialization Program 2026 - KAUST Academy</p>

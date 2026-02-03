@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab 3: Quality Evaluation Hands-on - Bioinformatics 2026</title>
+    <title>Lab 3: Quality Control Hands-on - Bioinformatics 2026</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
@@ -21,7 +21,271 @@
         </div>
     </nav>
 
-   
+    <main>
+        <h1>Lab 3: Quality Control Hands-on</h1>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Run FastQC to assess raw read quality</li>
+                <li>Interpret FastQC reports and identify quality issues</li>
+                <li>Use fastp for quality trimming and adapter removal</li>
+                <li>Compare pre- and post-trimming quality with MultiQC</li>
+            </ul>
+        </div>
+
+        <section>
+            <h2>Why Quality Control?</h2>
+            <div class="card">
+                <h3>Common Quality Issues in RNA-seq Data</h3>
+                <ul>
+                    <li><strong>Low quality bases:</strong> Especially at read ends (3' end degradation)</li>
+                    <li><strong>Adapter contamination:</strong> Sequencing adapters not fully removed</li>
+                    <li><strong>Overrepresented sequences:</strong> PCR duplicates or contamination</li>
+                    <li><strong>GC bias:</strong> Non-uniform GC content distribution</li>
+                    <li><strong>N bases:</strong> Uncalled bases indicating sequencing errors</li>
+                </ul>
+                <p>Quality control ensures reliable downstream analysis by identifying and addressing these issues.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 1: FastQC Analysis</h2>
+            <p>FastQC provides a comprehensive quality report for each FASTQ file.</p>
+
+            <div class="step" data-step="1">
+                <h3>Run FastQC on raw data</h3>
+                <pre><code>cd ~/genomics
+
+# Activate environment
+conda activate genomics
+
+# Run FastQC on all raw FASTQ files
+fastqc raw_data/*.fastq.gz -o qc_reports/fastqc_raw -t 4
+
+# List the generated reports
+ls -la qc_reports/fastqc_raw/</code></pre>
+                <p>FastQC generates two files per sample: an HTML report and a ZIP archive with data.</p>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>View FastQC reports</h3>
+                <pre><code># Open HTML report in browser (macOS)
+open qc_reports/fastqc_raw/KO_1_SRR10045016_1_fastqc.html
+
+# On Linux with GUI
+# firefox qc_reports/fastqc_raw/KO_1_SRR10045016_1_fastqc.html &
+
+# Or view summary from command line
+unzip -p qc_reports/fastqc_raw/KO_1_SRR10045016_1_fastqc.zip \
+    KO_1_SRR10045016_1_fastqc/summary.txt</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 2: Interpreting FastQC Reports</h2>
+
+            <div class="card">
+                <h3>FastQC Modules Overview</h3>
+                <table class="schedule-table">
+                    <tr><th>Module</th><th>What it Shows</th><th>Common Issues</th></tr>
+                    <tr><td>Per base sequence quality</td><td>Quality scores across read positions</td><td>Low quality at 3' end</td></tr>
+                    <tr><td>Per sequence quality scores</td><td>Distribution of mean quality per read</td><td>Bimodal distribution</td></tr>
+                    <tr><td>Per base sequence content</td><td>A/T/G/C proportions per position</td><td>Bias at read start (normal for RNA-seq)</td></tr>
+                    <tr><td>Per sequence GC content</td><td>GC% distribution across reads</td><td>Multiple peaks (contamination)</td></tr>
+                    <tr><td>Sequence duplication levels</td><td>Read duplication rate</td><td>High duplication (normal for RNA-seq)</td></tr>
+                    <tr><td>Overrepresented sequences</td><td>Frequently occurring sequences</td><td>Adapters, rRNA</td></tr>
+                    <tr><td>Adapter content</td><td>Adapter sequence presence</td><td>Adapter contamination</td></tr>
+                </table>
+            </div>
+
+            <div class="info-box tip">
+                <strong>RNA-seq Specific Considerations</strong>
+                <p>Some FastQC warnings are expected for RNA-seq data:</p>
+                <ul>
+                    <li><strong>Per base sequence content:</strong> Often shows bias at first 10-15 bases due to random hexamer priming - this is normal</li>
+                    <li><strong>Sequence duplication:</strong> Higher duplication is expected due to highly expressed genes</li>
+                    <li><strong>GC content:</strong> May show slight deviations from theoretical distribution</li>
+                </ul>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Extract key metrics from FastQC</h3>
+                <pre><code># Check pass/warn/fail status for all samples
+#FastQC Summary for All Samples
+for f in qc_reports/fastqc_raw/*_fastqc.zip; do
+    unzip "$f" -d qc_reports/fastqc_raw/;
+done
+
+#open the summary.txt and look for "PASS|WARN|FAIL"
+</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 3: Quality Trimming with fastp</h2>
+            <p>fastp is an all-in-one tool for quality control, trimming, and filtering.</p>
+
+            <div class="step" data-step="4">
+                <h3>Run fastp on one sample</h3>
+                <pre><code>cd ~/genomics
+
+# Process one sample first to understand the output
+fastp \
+    --in1 raw_data/KO_1_SRR10045016_1.fastq.gz \
+    --in2 raw_data/KO_1_SRR10045016_2.fastq.gz \
+    --out1 trimmed_data/KO_1_SRR10045016_1.trimmed.fastq.gz \
+    --out2 trimmed_data/KO_1_SRR10045016_2.trimmed.fastq.gz \
+    --qualified_quality_phred 20 \
+    --length_required 36 \
+    --detect_adapter_for_pe \
+    --overrepresentation_analysis \
+    --thread 4 \
+    --json qc_reports/fastp/KO_1.json \
+    --html qc_reports/fastp/KO_1.html
+
+# View the HTML report
+open qc_reports/fastp/KO_1.html</code></pre>
+
+                <div class="info-box note">
+                    <strong>fastp Parameters Explained</strong>
+                    <ul>
+                        <li><code>--qualified_quality_phred 20</code>: Bases below Q20 are considered low quality</li>
+                        <li><code>--length_required 36</code>: Discard reads shorter than 36 bp after trimming</li>
+                        <li><code>--detect_adapter_for_pe</code>: Auto-detect adapters for paired-end data</li>
+                        <li><code>--thread 4</code>: Use 4 CPU threads</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Process all samples with a loop</h3>
+                <pre><code>cd ~/genomics
+
+# Define sample IDs
+SAMPLES="KO_1_SRR10045016 KO_2_SRR10045017 KO_3_SRR10045018 WT_1_SRR10045019 WT_2_SRR10045020 WT_3_SRR10045021"
+
+# Process each sample
+for SAMPLE in $SAMPLES; do
+    echo "Processing $SAMPLE..."
+
+    fastp \
+        --in1 raw_data/${SAMPLE}_1.fastq.gz \
+        --in2 raw_data/${SAMPLE}_2.fastq.gz \
+        --out1 trimmed_data/${SAMPLE}_1.trimmed.fastq.gz \
+        --out2 trimmed_data/${SAMPLE}_2.trimmed.fastq.gz \
+        --qualified_quality_phred 20 \
+        --length_required 36 \
+        --detect_adapter_for_pe \
+        --overrepresentation_analysis \
+        --thread 4 \
+        --json qc_reports/fastp/${SAMPLE}.json \
+        --html qc_reports/fastp/${SAMPLE}.html \
+        2>> logs/fastp.log
+done
+
+echo "Trimming complete!"
+ls -lh trimmed_data/</code></pre>
+            </div>
+
+            <div class="step" data-step="6">
+                <h3>Check trimming results</h3>
+                <pre><code># Compare file sizes before and after trimming
+echo "=== Raw vs Trimmed File Sizes ==="
+ls -lh raw_data/*_1.fastq.gz | awk '{print $5}'
+ls -lh trimmed_data/*_1.trimmed.fastq.gz | awk '{print $5}'
+
+# Get read counts before and after
+echo "=== Read Counts Before/After Trimming ==="
+seqkit stats raw_data/*_1.fastq.gz trimmed_data/*_1.trimmed.fastq.gz</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 4: Post-Trimming Quality Check</h2>
+
+            <div class="step" data-step="7">
+                <h3>Run FastQC on trimmed data</h3>
+                <pre><code>cd ~/genomics
+
+# Run FastQC on trimmed files
+fastqc trimmed_data/*.fastq.gz -o qc_reports/fastqc_trimmed -t 4
+
+#Compare a sample before and after
+#browse the HTML reports or
+#Unzip the fastq reports in each of the folders and check the summary files
+</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 5: MultiQC Aggregated Report</h2>
+            <p>MultiQC combines results from multiple samples into a single interactive report.</p>
+
+            <div class="step" data-step="8">
+                <h3>Generate MultiQC reports</h3>
+                <pre><code>cd ~/genomics
+
+# Generate a comprehensive report with all QC data
+multiqc qc_reports/ -o qc_reports -n multiqc_all --force
+
+# Open the combined report
+open qc_reports/multiqc_all.html</code></pre>
+            </div>
+
+            <div class="card">
+                <h3>Key MultiQC Sections to Review</h3>
+                <ul>
+                    <li><strong>General Statistics:</strong> Overview table of all samples</li>
+                    <li><strong>FastQC:</strong> Per-base quality, GC content, sequence duplication</li>
+                    <li><strong>fastp:</strong> Filtering statistics, adapter content, quality distribution</li>
+                </ul>
+                <p>Use MultiQC to quickly identify outlier samples that may need special attention.</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Exercises</h2>
+            <div class="card">
+                <h3>Exercise 1: Quality Assessment</h3>
+                <ol>
+                    <li>Which sample has the highest percentage of reads passing filters?</li>
+                    <li>Compare the "Per base sequence quality" plots before and after trimming. What improved?</li>
+                    <li>Are there any overrepresented sequences? What might they be?</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 2: Parameter Exploration</h3>
+                <p>Try running fastp with different parameters on one sample:</p>
+                <pre><code># More stringent quality filtering
+fastp --in1 raw_data/KO_1_SRR10045016_1.fastq.gz \
+      --in2 raw_data/KO_1_SRR10045016_2.fastq.gz \
+      --out1 test_q30_1.fastq.gz \
+      --out2 test_q30_2.fastq.gz \
+      --qualified_quality_phred 30 \
+      --length_required 50
+
+# Compare read counts
+seqkit stats trimmed_data/KO_1_SRR10045016_1.trimmed.fastq.gz test_q30_1.fastq.gz
+rm test_q30_*.fastq.gz</code></pre>
+                <p>How does changing the quality threshold affect the number of reads retained?</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you have:</p>
+            <ul>
+                <li>Run FastQC to assess raw read quality</li>
+                <li>Interpreted FastQC reports and understood common metrics</li>
+                <li>Used fastp to trim adapters and low-quality bases</li>
+                <li>Verified quality improvement after trimming</li>
+                <li>Generated aggregated MultiQC reports for easy comparison</li>
+            </ul>
+            <p><strong>Next:</strong> <a href="lab4.html">Lab 4 - Genome Alignment Hands-on</a></p>
+        </section>
+    </main>
 
     <footer>
         <p>Bioinformatics Specialization Program 2026 - KAUST Academy</p>

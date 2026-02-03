@@ -26,8 +26,13 @@
         <p>This program includes 9 hands-on labs that guide you through a complete RNA-seq analysis workflow. Each lab builds on the previous ones, using a consistent dataset throughout.</p>
 
         <div class="info-box note">
-            <strong>Dataset Information</strong>
-            Throughout these labs, we will use RNA-seq data from a publicly available dataset. The same samples will be processed from raw reads through differential expression and enrichment analysis, giving you experience with a real end-to-end workflow.
+            <strong>Dataset: TDP-43 Knockout Study (GSE136366)</strong>
+            <p>Throughout these labs, we analyze RNA-seq data comparing TDP-43 knockout (KO) vs wildtype rescue (WT) in human HeLa cells. TDP-43 is an RNA-binding protein implicated in ALS and frontotemporal dementia.</p>
+            <ul>
+                <li><strong>Samples:</strong> 3 KO + 3 WT replicates (6 total)</li>
+                <li><strong>Sequencing:</strong> Paired-end Illumina HiSeq 2500, 70 bp reads</li>
+                <li><strong>Workshop subset:</strong> Chromosome 11 only (faster processing)</li>
+            </ul>
         </div>
 
         <section>
@@ -40,6 +45,9 @@
                     <div class="tools-list">
                         <span class="tool-tag">SRA Toolkit</span>
                         <span class="tool-tag">wget</span>
+                        <span class="tool-tag">awk</span>
+                        <span class="tool-tag">NCBI</span>
+                        <span class="tool-tag">Ensembl</span>
                     </div>
                     <a href="lab1.html">Start Lab &rarr;</a>
                 </div>
@@ -49,7 +57,7 @@
                     <p>Explore RNA-seq datasets and sequencing reads. Learn to navigate and understand FASTQ file structure and content.</p>
                     <div class="tools-list">
                         <span class="tool-tag">SeqKit</span>
-                        <span class="tool-tag">gzcat</span>
+                        <span class="tool-tag">gzip</span>
                         <span class="tool-tag">awk</span>
                     </div>
                     <a href="lab2.html">Start Lab &rarr;</a>
@@ -88,7 +96,6 @@
                     <p>Perform gene-level and transcript-level quantification. Build and inspect an expression matrix for downstream analysis.</p>
                     <div class="tools-list">
                         <span class="tool-tag">Salmon, tximport</span>
-                        <span class="tool-tag">StringTie</span>
                     </div>
                     <a href="lab5.html">Start Lab &rarr;</a>
                 </div>

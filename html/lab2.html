@@ -21,7 +21,221 @@
         </div>
     </nav>
 
-   
+    <main>
+        <h1>Lab 2: Hands-on with Transcriptomics Data</h1>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Understand the experimental dataset we will analyze</li>
+                <li>Understand the FASTQ file format in depth</li>
+                <li>Calculate basic statistics on  fastq files using SeqKit</li>
+                <li>Identify quality patterns in raw sequencing data</li>
+            </ul>
+        </div>
+        <section>
+            <h2>Part 1: Understand The Dataset: TDP-43 Knockout Study</h2>
+            <p>Throughout this course, we will analyze RNA-seq data from <strong>GSE136366</strong> - a study investigating the role of TDP-43 protein in human cells.</p>
+
+            <div class="card">
+                <h3>About TDP-43</h3>
+                <p>TDP-43 (TAR DNA-binding protein 43) is an RNA-binding protein involved in RNA processing and regulation. Mutations in TDP-43 are associated with neurodegenerative diseases including:</p>
+                <ul>
+                    <li>Amyotrophic Lateral Sclerosis (ALS)</li>
+                    <li>Frontotemporal Dementia (FTD)</li>
+                </ul>
+                <p>This study examines gene expression changes when TDP-43 is knocked out versus restored (wildtype rescue) in HeLa cells.</p>
+            </div>
+
+            <div class="card">
+                <h3>Experimental Design</h3>
+                <ul>
+                    <li><strong>Organism:</strong> Homo sapiens (Human)</li>
+                    <li><strong>Cell line:</strong> HeLa cells</li>
+                    <li><strong>Conditions:</strong>
+                        <ul>
+                            <li><strong>KO (Knockout):</strong> TDP-43 gene deleted</li>
+                            <li><strong>WT (Wildtype/Rescue):</strong> TDP-43 re-expressed</li>
+                        </ul>
+                    </li>
+                    <li><strong>Replicates:</strong> 3 biological replicates per condition</li>
+                    <li><strong>Sequencing:</strong> Paired-end Illumina HiSeq 2500, 70 bp reads</li>
+                </ul>
+                <p><strong>Reference:</strong> Roczniak-Ferguson A, Ferguson SM. "Pleiotropic requirements for human TDP-43 in the regulation of cell and organelle homeostasis." <em>Life Sci Alliance</em> 2019 Oct;2(5). PMID: 31527135</p>
+            </div>
+
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th>Sample Name</th>
+                        <th>SRA Accession</th>
+                        <th>Condition</th>
+                        <th>Replicate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>KO_1</td><td>SRR10045016</td><td>TDP-43 Knockout</td><td>1</td></tr>
+                    <tr><td>KO_2</td><td>SRR10045017</td><td>TDP-43 Knockout</td><td>2</td></tr>
+                    <tr><td>KO_3</td><td>SRR10045018</td><td>TDP-43 Knockout</td><td>3</td></tr>
+                    <tr><td>WT_1</td><td>SRR10045019</td><td>Wildtype (Rescue)</td><td>1</td></tr>
+                    <tr><td>WT_2</td><td>SRR10045020</td><td>Wildtype (Rescue)</td><td>2</td></tr>
+                    <tr><td>WT_3</td><td>SRR10045021</td><td>Wildtype (Rescue)</td><td>3</td></tr>
+                </tbody>
+            </table>
+
+            <div class="info-box tip">
+                <strong>Workshop Dataset - Already downlpad in Lab 1 (~/genomics/raw_data)</strong>
+                <p>For this workshop, we use reads mapped to <strong>chromosome 11 only</strong> (~3-4 million reads per sample instead of >20 million). This allows all analyses to complete within the workshop time while still providing biologically meaningful results.</p>
+            </div>
+        </section>
+        
+        <section>
+            <h2>Part 3: Understand FASTQ File Format</h2>
+            <p>FASTQ is the standard format for storing sequencing reads along with their quality scores. Each read consists of 4 lines:</p>
+
+            <div class="card">
+                <h3>FASTQ Structure</h3>
+                <pre><code>@SRR10045016.1 1 length=70
+NTGCAGTGCTGAGTCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGA
++
+#AAFFFJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ</code></pre>
+                <table class="schedule-table">
+                    <tr><th>Line</th><th>Content</th><th>Description</th></tr>
+                    <tr><td>1</td><td>@SRR10045016.1...</td><td>Read identifier (starts with @)</td></tr>
+                    <tr><td>2</td><td>NTGCAGTG...</td><td>DNA sequence (A, T, G, C, N)</td></tr>
+                    <tr><td>3</td><td>+</td><td>Separator (sometimes repeats ID)</td></tr>
+                    <tr><td>4</td><td>#AAFFFJJ...</td><td>Quality scores (ASCII encoded)</td></tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>Phred Quality Scores</h3>
+                <p>Quality scores indicate the probability of a base call being incorrect:</p>
+                <table class="schedule-table">
+                    <tr><th>Phred Score</th><th>Error Probability</th><th>Accuracy</th><th>ASCII (Phred+33)</th></tr>
+                    <tr><td>10</td><td>1 in 10</td><td>90%</td><td>+</td></tr>
+                    <tr><td>20</td><td>1 in 100</td><td>99%</td><td>5</td></tr>
+                    <tr><td>30</td><td>1 in 1,000</td><td>99.9%</td><td>?</td></tr>
+                    <tr><td>40</td><td>1 in 10,000</td><td>99.99%</td><td>I</td></tr>
+                </table>
+                <p>Formula: Q = -10 × log₁₀(P) where P is error probability</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 4: Exploring FASTQ Files</h2>
+
+            <div class="step" data-step="1">
+                <h3>View raw FASTQ data</h3>
+                <pre><code>cd ~/genomics
+
+# View first 12 lines (3 reads) of a compressed FASTQ file
+gzip -dc raw_data/KO_1_SRR10045016_1.fastq.gz | head -12
+# gzip -dc works on both macOS and Linux
+
+# Count total number of lines in a file (each read = 4 lines)
+echo "Total lines in KO_1 R1:"
+gzip -dc raw_data/KO_1_SRR10045016_1.fastq.gz | wc -l | awk '{print $1/4}'
+
+# Count total reads in a file (each read = 4 lines)
+echo "Total reads in KO_1 R1:"
+gzip -dc raw_data/KO_1_SRR10045016_1.fastq.gz | wc -l
+
+# View a random sample of reads
+gzip -dc raw_data/KO_1_SRR10045016_1.fastq.gz | head -400 | tail -8</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Understand paired-end reads</h3>
+                <pre><code># Compare read IDs between R1 and R2 (should match)
+echo "=== First read from R1 (forward) ==="
+gzip -dc raw_data/KO_1_SRR10045016_1.fastq.gz | head -4
+
+echo ""
+echo "=== First read from R2 (reverse) ==="
+gzip -dc raw_data/KO_1_SRR10045016_2.fastq.gz | head -4
+
+# The read IDs should be identical (or differ only by /1 and /2)</code></pre>
+
+                <div class="info-box note">
+                    <strong>Paired-End Sequencing</strong>
+                    <p>In paired-end sequencing, each DNA fragment is sequenced from both ends:</p>
+                    <ul>
+                        <li><strong>R1 (_1.fastq)</strong>: Forward read</li>
+                        <li><strong>R2 (_2.fastq)</strong>: Reverse read</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 5: Using SeqKit for FASTQ Exploration</h2>
+            <p>SeqKit is a powerful toolkit for FASTA/FASTQ file manipulation.</p>
+
+            <div class="step" data-step="3">
+                <h3>Get basic statistics with SeqKit</h3>
+                <pre><code>cd ~/genomics
+
+# Get statistics for one sample
+seqkit stats raw_data/KO_1_SRR10045016_1.fastq.gz
+
+# Get statistics for all samples
+seqkit stats raw_data/*.fastq.gz > stats.tsv
+
+# More detailed statistics
+seqkit stats -a raw_data/KO_1_SRR10045016_1.fastq.gz</code></pre>
+            </div>
+
+        <section>
+            
+
+        </section>
+
+        <section>
+            <h2>Exercises</h2>
+            <div class="card">
+                <h3>Exercise 1: Read Analysis</h3>
+                <ol>
+                    <li>What is the average read length across all samples?</li>
+                    <li>Which sample has the highest number of reads?</li>
+                    <li>Calculate the total sequencing depth (total bases) for KO vs WT groups.</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 2: Quality Investigation</h3>
+                <ol>
+                    <li>Find reads that start with 'N' (unknown base). How many are there in KO_1?
+                        <pre><code>gzip -dc raw_data/KO_1_*_1.fastq.gz | awk 'NR%4==2 && /^N/' | wc -l</code></pre>
+                    </li>
+                    <li>What percentage of reads have a quality score below 20 at position 1?</li>
+                    <li>Compare the GC content between KO and WT samples. Is there a difference?</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 3: SeqKit Exploration</h3>
+                <p>Use <code>seqkit --help</code> to discover more commands. Try:</p>
+                <ol>
+                    <li><code>seqkit --help</code> -Revise the parameters</li>
+                    <li><code>seqkit grep -p "PATTERN"</code> - Search for specific sequences</li>
+                </ol>
+            </div>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you have:</p>
+            <ul>
+                <li>Covered the experimental dataset that we use in this course</li>
+                <li>Learned the FASTQ file format and Phred quality scores</li>
+                <li>Used gzip -dc to view compressed files</li>
+                <li>Applied SeqKit for sequence statistics</li>
+                <li>Compared sequencing depth across samples</li>
+            </ul>
+            <p><strong>Next:</strong> <a href="lab3.html">Lab 3 - Quality Control Hands-on</a></p>
+        </section>
+    </main>
 
     <footer>
         <p>Bioinformatics Specialization Program 2026 - KAUST Academy</p>

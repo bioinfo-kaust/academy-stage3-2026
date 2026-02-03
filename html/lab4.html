@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab 4: Quality Control Hands-on - Bioinformatics 2026</title>
+    <title>Lab 4: Genome Alignment Hands-on - Bioinformatics 2026</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
@@ -21,7 +21,321 @@
         </div>
     </nav>
 
-    
+    <main>
+        <h1>Lab 4: Genome Alignment Hands-on</h1>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Build a STAR genome index for chromosome 11</li>
+                <li>Align RNA-seq reads to the reference genome using STAR</li>
+                <li>Understand BAM file format and alignment statistics</li>
+                <li>Use samtools to inspect and manipulate BAM files</li>
+            </ul>
+        </div>
+
+        <section>
+            <h2>Why STAR for RNA-seq Alignment?</h2>
+            <div class="card">
+                <h3>STAR (Spliced Transcripts Alignment to a Reference)</h3>
+                <p>STAR is the gold-standard aligner for RNA-seq data because it:</p>
+                <ul>
+                    <li><strong>Handles splicing:</strong> Can align reads across exon-exon junctions</li>
+                    <li><strong>Fast:</strong> Uses uncompressed suffix arrays for rapid alignment</li>
+                    <li><strong>Accurate:</strong> High mapping accuracy even for novel splice junctions</li>
+                    <li><strong>Flexible:</strong> Outputs BAM files compatible with downstream tools</li>
+                </ul>
+            </div>
+
+            <div class="info-box warning">
+                <strong>Memory Requirements</strong>
+                <p>STAR requires significant RAM (~32 GB for full human genome). Using chromosome 11 only reduces this to ~4 GB, making it suitable for laptops.</p>
+                <p>STAR has many parameters and options, always revisit STAR manual (<a href="https://github.com/alexdobin/STAR/blob/b1edc1208d91a53bf40ebae8669f71d50b994851/doc/STARmanual.pdf">current version 2.7.11b</a>) for details</p>
+            </div>
+        </section>
+        <section>
+            <h2>Check Genome Reference Files</h2>
+            <p>Make sure the steps in <a href="lab1.html">Lab 1</a> Part 3-5 were successful, Check contents of the reference folder<code>ls -lh ~/genomics/references</code></p>
+        </section>
+        <section>
+            <h2>Part 1: Build STAR Genome Index</h2>
+            <p>Before alignment, STAR requires a pre-built genome index.</p>
+
+            <div class="step" data-step="1">
+                <h3>Create the STAR index</h3>
+                <pre><code>cd ~/genomics
+
+# Activate environment
+conda activate genomics
+
+# Create directory for STAR index
+mkdir -p references/star_index
+
+# Build STAR index for chromosome 11
+# This takes 5-10 minutes and ~4 GB RAM
+STAR --runMode genomeGenerate \
+    --runThreadN 4 \
+    --genomeDir references/star_index \
+    --genomeFastaFiles references/Homo_sapiens.GRCh38.dna.chromosome.11.fa \
+    --sjdbGTFfile references/Homo_sapiens.GRCh38.110.chr11.gtf \
+    --sjdbOverhang 69 \
+    --genomeSAindexNbases 11
+
+# Check the generated index files
+ls -lh references/star_index/</code></pre>
+
+                <div class="info-box note">
+                    <strong>Key Parameters</strong>
+                    <ul>
+                        <li><code>--sjdbOverhang 69</code>: ReadLength - 1 (our reads are 70 bp)</li>
+                        <li><code>--genomeSAindexNbases 11</code>: Reduced for small genomes (chr11 only)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 2: Align Reads with STAR</h2>
+
+            <div class="step" data-step="2">
+                <h3>Align one sample</h3>
+                <pre><code>cd ~/genomics
+
+# Align KO_1 sample
+STAR --runThreadN 4 \
+    --genomeDir references/star_index \
+    --readFilesIn trimmed_data/KO_1_SRR10045016_1.trimmed.fastq.gz \
+                  trimmed_data/KO_1_SRR10045016_2.trimmed.fastq.gz \
+    --outFileNamePrefix alignment/KO_1_ \
+    --outSAMattributes Standard \
+    --readFilesCommand zcat \
+    --outSAMtype BAM SortedByCoordinate \
+    --quantMode GeneCounts
+
+# Check output files
+ls -lh alignment/KO_1_*</code></pre>
+            </div>
+            <div class="info-box note">
+                <strong>Troubleshooting</strong>
+                <ul>
+                    <li><code>--readFilesCommand zcat</code>: You might need to change this depending what extraction method is available on your system</li>
+                    <li>In case STAT does not finish normally, Review <code>alignment/sample_Log.out</code> for information. On Mac it might have issues with the CPU architecture</li>
+                    <li>The <code>--sjdbGTFfile</code> option must have been used during star_index generation when <code>--quantMode GeneCounts</code> is enabled.<li>
+                </ul>
+            </div>
+            <div class="step" data-step="3">
+                <h3>Align all samples</h3>
+                <pre><code>cd ~/genomics
+
+# Define samples
+SAMPLES="KO_1_SRR10045016 KO_2_SRR10045017 KO_3_SRR10045018 WT_1_SRR10045019 WT_2_SRR10045020 WT_3_SRR10045021"
+
+# Align each sample
+for SAMPLE in $SAMPLES; do
+    echo "Aligning $SAMPLE..."
+
+    STAR --runThreadN 4 \
+        --genomeDir references/star_index \
+        --readFilesIn trimmed_data/${SAMPLE}_1.trimmed.fastq.gz \
+                      trimmed_data/${SAMPLE}_2.trimmed.fastq.gz \
+        --outFileNamePrefix alignment/${SAMPLE}_ \
+        --outSAMattributes Standard \
+        --readFilesCommand zcat \
+        --outSAMtype BAM SortedByCoordinate \
+        --quantMode GeneCounts
+        2>> logs/star.log
+done
+
+echo "Alignment complete!"
+ls -lh alignment/*.bam</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 3: Understanding STAR Output</h2>
+
+            <div class="step" data-step="4">
+                <h3>Review alignment log</h3>
+                <pre><code>cd ~/genomics
+
+# View the alignment summary (Log.final.out)
+cat alignment/KO_1_Log.final.out
+
+# Key metrics to look for:
+# - Uniquely mapped reads %: Should be >80% for good data
+# - % of reads mapped to multiple loci: High values may indicate repetitive sequences
+# - % of reads unmapped: Should be relatively low</code></pre>
+
+                <div class="card">
+                    <h3>Expected Alignment Metrics</h3>
+                    <table class="schedule-table">
+                        <tr><th>Metric</th><th>Good</th><th>Acceptable</th><th>Investigate</th></tr>
+                        <tr><td>Uniquely mapped %</td><td>>80%</td><td>70-80%</td><td><70%</td></tr>
+                        <tr><td>Multi-mapped %</td><td><10%</td><td>10-20%</td><td>>20%</td></tr>
+                        <tr><td>Unmapped %</td><td><5%</td><td>5-15%</td><td>>15%</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Compare alignment rates across samples</h3>
+                <p>Go through each file manually, see <code>alignment/sampleName_Log.final.out</code> and look for Sample,Input_Reads,Uniquely_Mapped,Unique%,Multi_Mapped,Unmapped rows</p>
+                <p>Optional, you can use a for loop to get these information for all samples</p><pre><code># Extract key stats from all samples
+echo "Sample,Input_Reads,Uniquely_Mapped,Unique%,Multi_Mapped,Unmapped"
+
+for log in alignment/*_Log.final.out; do
+    sample=$(basename $log _Log.final.out)
+    input=$(grep "Number of input reads" $log | awk '{print $NF}')
+    unique=$(grep "Uniquely mapped reads number" $log | awk '{print $NF}')
+    unique_pct=$(grep "Uniquely mapped reads %" $log | awk '{print $NF}')
+    multi=$(grep "Number of reads mapped to multiple loci" $log | awk '{print $NF}')
+    unmapped=$(grep "% of reads unmapped" $log | head -1 | awk '{print $NF}')
+    echo "$sample,$input,$unique,$unique_pct,$multi,$unmapped"
+done</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 4: Working with BAM Files</h2>
+
+            <div class="step" data-step="6">
+                <h3>Index BAM files with samtools</h3>
+                <pre><code>cd ~/genomics
+
+# Index all BAM files (required for IGV and many tools)
+for bam in alignment/*_Aligned.sortedByCoord.out.bam; do
+    echo "Indexing $bam..."
+    samtools index $bam
+done
+
+# Verify index files were created
+ls -lh alignment/*.bai</code></pre>
+            </div>
+
+            <div class="step" data-step="7">
+                <h3>Explore BAM file structure</h3>
+                <pre><code># View BAM header
+samtools view -H alignment/KO_1_Aligned.sortedByCoord.out.bam | head -20
+
+# View first 5 aligned reads
+samtools view alignment/KO_1_Aligned.sortedByCoord.out.bam | head -5
+
+# Count total aligned reads
+samtools view -c alignment/KO_1_Aligned.sortedByCoord.out.bam
+
+# Count properly paired reads
+samtools view -c -f 2 alignment/KO_1_Aligned.sortedByCoord.out.bam</code></pre>
+
+                <div class="info-box note">
+                    <strong>BAM Format - Key Columns</strong>
+                    <table class="schedule-table">
+                        <tr><th>Col</th><th>Field</th><th>Description</th></tr>
+                        <tr><td>1</td><td>QNAME</td><td>Read name</td></tr>
+                        <tr><td>2</td><td>FLAG</td><td>Bitwise flag (paired, mapped, etc.)</td></tr>
+                        <tr><td>3</td><td>RNAME</td><td>Reference chromosome</td></tr>
+                        <tr><td>4</td><td>POS</td><td>Mapping position</td></tr>
+                        <tr><td>5</td><td>MAPQ</td><td>Mapping quality</td></tr>
+                        <tr><td>6</td><td>CIGAR</td><td>Alignment description</td></tr>
+                        <tr><td>10</td><td>SEQ</td><td>Read sequence</td></tr>
+                        <tr><td>11</td><td>QUAL</td><td>Quality scores</td></tr>
+                    </table>
+                </div>
+                <div class="info-box note">
+                    <strong>Samtools flags</strong>
+                    <p>To know what flag to use when inspecting BAM files using samtools, visit <a href="https://broadinstitute.github.io/picard/explain-flags.html">Explain flags</a> check the desired boxes and use the resulting number from the top with <code>-f</code> or <code>-F</code> flags in samtools </p>
+                </div>
+            </div>
+
+            <div class="step" data-step="8">
+                <h3>Generate alignment statistics</h3>
+                <pre><code># Detailed statistics with samtools flagstat
+samtools flagstat alignment/KO_1_Aligned.sortedByCoord.out.bam
+
+# Generate stats for all samples
+for bam in alignment/*_Aligned.sortedByCoord.out.bam; do
+    echo "--- $bam ---"
+    samtools flagstat $bam | head -5
+    echo ""
+done</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 5: Visualizing and Retrieving Aligned Reads</h2>
+
+            <div class="step" data-step="9">
+                <h3>View in IGV (Integrative Genomics Viewer)</h3>
+                <pre><code># Launch IGV (if installed via conda)
+igv &
+
+# In IGV:
+# 1. Genomes > Load Genome from File > references/Homo_sapiens.GRCh38.dna.chromosome.11.fa
+# 2. File > Load from File > references/references/Homo_sapiens.GRCh38.110.chr11.gtf
+# 3. File > Load from File > alignment/KO_1_Aligned.sortedByCoord.out.bam
+# 4. Navigate to a gene: e.g., search for "INS" (insulin gene on chr11)
+# 5. Check reads mapping to each exon in "INS" gene
+# 6. Load BAM file for a WT sample and see if there are any differences with the KO sample above
+            </div>
+
+            <div class="step" data-step="10">
+                <h3>Alternative Approach: use <code>samtools</code> to investigate BAM files</h3>
+                <pre><code># View reads at a specific position (add chr:start-end to samtools command)
+# INS gene is approximately at chr11:2159779-2161209
+samtools view alignment/KO_1_Aligned.sortedByCoord.out.bam 11:2159779-2161209 | head -5
+
+# Count reads in the INS gene region
+samtools view -c alignment/KO_1_Aligned.sortedByCoord.out.bam 11:2159779-2161209
+
+# Compare expression between conditions
+echo "=== Reads in INS gene region ==="
+for bam in alignment/*_Aligned.sortedByCoord.out.bam; do
+    echo $bam
+    samtools view -c $bam 11:2159779-2161209
+done</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Exercises</h2>
+            <div class="card">
+                <h3>Exercise 1: Alignment Analysis</h3>
+                <ol>
+                    <li>Which sample has the highest mapping rate? Which has the lowest?</li>
+                    <li>How many reads map to multiple locations? Why might this occur?</li>
+                    <li>Why did we use<code>--sjdbOverhang 69</code> in building the STAR index? Hint: use STAR manual to answer.
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 2: BAM Exploration</h3>
+                <p>Use samtools:</p>
+                <pre><code># How many reads have mapping quality >= 30?
+samtools view -c -q 30 alignment/KO_1_Aligned.sortedByCoord.out.bam
+
+# How many reads are on the forward strand?
+samtools view -c -F 16 alignment/KO_1_Aligned.sortedByCoord.out.bam
+
+# Extract reads from a specific region to a new BAM
+samtools view -b alignment/KO_1_Aligned.sortedByCoord.out.bam 11:1000000-2000000 > test_region.bam</code></pre>
+
+Question: Which condition (WT vs. KO) have more reads in "TTC17" gene?
+            </div>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you have:</p>
+            <ul>
+                <li>Built a STAR genome index for chromosome 11</li>
+                <li>Aligned RNA-seq reads using STAR with splice-aware alignment</li>
+                <li>Interpreted alignment logs and metrics</li>
+                <li>Used samtools to index, view, and analyze BAM files</li>
+                <li>Explored read coverage at specific genomic regions</li>
+            </ul>
+            <p><strong>Next:</strong> <a href="lab5.html">Lab 5 - Counting & Expression Matrix Construction</a></p>
+        </section>
+    </main>
+
     <footer>
         <p>Bioinformatics Specialization Program 2026 - KAUST Academy</p>
     </footer>
