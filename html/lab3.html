@@ -70,15 +70,8 @@ ls -la qc_reports/fastqc_raw/</code></pre>
 
             <div class="step" data-step="2">
                 <h3>View FastQC reports</h3>
-                <pre><code># Open HTML report in browser (macOS)
-open qc_reports/fastqc_raw/KO_1_SRR10045016_1_fastqc.html
-
-# On Linux with GUI
-# firefox qc_reports/fastqc_raw/KO_1_SRR10045016_1_fastqc.html &
-
-# Or view summary from command line
-unzip -p qc_reports/fastqc_raw/KO_1_SRR10045016_1_fastqc.zip \
-    KO_1_SRR10045016_1_fastqc/summary.txt</code></pre>
+                <p>Open the HTML report in browser, check under <code>qc_reports/fastqc_raw/</code></p>
+                <p>Or view the summary.txt file under the zip folder in  qc_reports/fastqc_raw/</p>
             </div>
         </section>
 
@@ -107,18 +100,6 @@ unzip -p qc_reports/fastqc_raw/KO_1_SRR10045016_1_fastqc.zip \
                     <li><strong>Sequence duplication:</strong> Higher duplication is expected due to highly expressed genes</li>
                     <li><strong>GC content:</strong> May show slight deviations from theoretical distribution</li>
                 </ul>
-            </div>
-
-            <div class="step" data-step="3">
-                <h3>Extract key metrics from FastQC</h3>
-                <pre><code># Check pass/warn/fail status for all samples
-#FastQC Summary for All Samples
-for f in qc_reports/fastqc_raw/*_fastqc.zip; do
-    unzip "$f" -d qc_reports/fastqc_raw/;
-done
-
-#open the summary.txt and look for "PASS|WARN|FAIL"
-</code></pre>
             </div>
         </section>
 
@@ -167,8 +148,6 @@ SAMPLES="KO_1_SRR10045016 KO_2_SRR10045017 KO_3_SRR10045018 WT_1_SRR10045019 WT_
 
 # Process each sample
 for SAMPLE in $SAMPLES; do
-    echo "Processing $SAMPLE..."
-
     fastp \
         --in1 raw_data/${SAMPLE}_1.fastq.gz \
         --in2 raw_data/${SAMPLE}_2.fastq.gz \
@@ -184,7 +163,6 @@ for SAMPLE in $SAMPLES; do
         2>> logs/fastp.log
 done
 
-echo "Trimming complete!"
 ls -lh trimmed_data/</code></pre>
             </div>
 
@@ -192,11 +170,10 @@ ls -lh trimmed_data/</code></pre>
                 <h3>Check trimming results</h3>
                 <pre><code># Compare file sizes before and after trimming
 echo "=== Raw vs Trimmed File Sizes ==="
-ls -lh raw_data/*_1.fastq.gz | awk '{print $5}'
-ls -lh trimmed_data/*_1.trimmed.fastq.gz | awk '{print $5}'
+ls -lh raw_data/*_1.fastq.gz
+ls -lh trimmed_data/*_1.trimmed.fastq.gz
 
 # Get read counts before and after
-echo "=== Read Counts Before/After Trimming ==="
 seqkit stats raw_data/*_1.fastq.gz trimmed_data/*_1.trimmed.fastq.gz</code></pre>
             </div>
         </section>
@@ -212,9 +189,7 @@ seqkit stats raw_data/*_1.fastq.gz trimmed_data/*_1.trimmed.fastq.gz</code></pre
 fastqc trimmed_data/*.fastq.gz -o qc_reports/fastqc_trimmed -t 4
 
 #Compare a sample before and after
-#browse the HTML reports or
-#Unzip the fastq reports in each of the folders and check the summary files
-</code></pre>
+#browse the HTML reports</code></pre>
             </div>
         </section>
 
@@ -229,8 +204,8 @@ fastqc trimmed_data/*.fastq.gz -o qc_reports/fastqc_trimmed -t 4
 # Generate a comprehensive report with all QC data
 multiqc qc_reports/ -o qc_reports -n multiqc_all --force
 
-# Open the combined report
-open qc_reports/multiqc_all.html</code></pre>
+# Open the combined report in the browser:
+qc_reports/multiqc_all.html</code></pre>
             </div>
 
             <div class="card">
