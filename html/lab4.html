@@ -180,18 +180,6 @@ cat alignment/KO_1_Log.final.out
             <div class="step" data-step="5">
                 <h3>Compare alignment rates across samples</h3>
                 <p>Go through each file manually, see <code>alignment/sampleName_Log.final.out</code> and look for Sample,Input_Reads,Uniquely_Mapped,Unique%,Multi_Mapped,Unmapped rows</p>
-                <p>Optional, you can use a for loop to get these information for all samples</p><pre><code># Extract key stats from all samples
-echo "Sample,Input_Reads,Uniquely_Mapped,Unique%,Multi_Mapped,Unmapped"
-
-for log in alignment/*_Log.final.out; do
-    sample=$(basename $log _Log.final.out)
-    input=$(grep "Number of input reads" $log | awk '{print $NF}')
-    unique=$(grep "Uniquely mapped reads number" $log | awk '{print $NF}')
-    unique_pct=$(grep "Uniquely mapped reads %" $log | awk '{print $NF}')
-    multi=$(grep "Number of reads mapped to multiple loci" $log | awk '{print $NF}')
-    unmapped=$(grep "% of reads unmapped" $log | head -1 | awk '{print $NF}')
-    echo "$sample,$input,$unique,$unique_pct,$multi,$unmapped"
-done</code></pre>
             </div>
         </section>
 
@@ -200,7 +188,7 @@ done</code></pre>
 
             <div class="step" data-step="6">
                 <h3>Index BAM files with samtools</h3>
-                <pre><code>cd ~/genomics
+                <pre><code>cd ~/genomics/
 
 # Index all BAM files (required for IGV and many tools)
 for bam in alignment/*_Aligned.sortedByCoord.out.bam; do
@@ -272,25 +260,25 @@ igv &
 # 1. Genomes > Load Genome from File > references/Homo_sapiens.GRCh38.dna.chromosome.11.fa
 # 2. File > Load from File > references/references/Homo_sapiens.GRCh38.110.chr11.gtf
 # 3. File > Load from File > alignment/KO_1_Aligned.sortedByCoord.out.bam
-# 4. Navigate to a gene: e.g., search for "INS" (insulin gene on chr11)
-# 5. Check reads mapping to each exon in "INS" gene
+# 4. Navigate to a gene: e.g., search for "MDK" (Midkine gene on chr11)
+# 5. Check reads mapping to each exon in "Midkine" gene
 # 6. Load BAM file for a WT sample and see if there are any differences with the KO sample above
             </div>
 
             <div class="step" data-step="10">
                 <h3>Alternative Approach: use <code>samtools</code> to investigate BAM files</h3>
                 <pre><code># View reads at a specific position (add chr:start-end to samtools command)
-# INS gene is approximately at chr11:2159779-2161209
-samtools view alignment/KO_1_Aligned.sortedByCoord.out.bam 11:2159779-2161209 | head -5
+# MDK gene is approximately at chr11:46380756–46383837
+samtools view alignment/KO_1_Aligned.sortedByCoord.out.bam chr11:46380756–46383837 | head -5
 
-# Count reads in the INS gene region
-samtools view -c alignment/KO_1_Aligned.sortedByCoord.out.bam 11:2159779-2161209
+# Count reads in the MDK gene region
+samtools view -c alignment/KO_1_Aligned.sortedByCoord.out.bam chr11:46380756–46383837
 
 # Compare expression between conditions
-echo "=== Reads in INS gene region ==="
+echo "=== Reads in MDK gene region ==="
 for bam in alignment/*_Aligned.sortedByCoord.out.bam; do
     echo $bam
-    samtools view -c $bam 11:2159779-2161209
+    samtools view -c $bam chr11:46380756–46383837
 done</code></pre>
             </div>
         </section>

@@ -167,13 +167,7 @@ head -20 salmon_quant/KO_1/quant.sf
 # Check mapping rate
 grep "Mapping rate" salmon_quant/KO_1/logs/salmon_quant.log
 
-# Compare mapping rates across samples
-echo "=== Salmon Mapping Rates ==="
-for dir in salmon_quant/*/; do
-    sample=$(basename $dir)
-    rate=$(grep "Mapping rate" $dir/logs/salmon_quant.log | awk '{print $NF}')
-    echo "$sample: $rate"
-done</code></pre>
+                </code></pre>
             </div>
         </section>
 
@@ -289,37 +283,67 @@ head -20 counts/gene_counts.tsv | column -t
 wc -l counts/gene_counts.tsv
 
 # How many genes have at least 10 reads in any sample?
-awk 'NR>1 {
-    max=0;
-    for(i=2;i<=NF;i++) if($i>max) max=$i;
     if(max>=10) count++
 } END {print count " genes with >=10 reads"}' counts/gene_counts.tsv
 
 # View TPM values (normalized)
 head -20 counts/gene_tpm.tsv | column -t
 
-#Open the count matrix in MS Excel and get familiar with content</code></pre>
+#Open the count matrix in MS Excel and get familiar with the content</code></pre>
             </div>
             
             <div class="step" data-step="9">
                 <h3>Quick visualization with Python</h3>
-                <pre><code># Create a simple Python script for visualization
-cat > scripts/quick_viz.py << 'EOF'
+
+                <div class="info-box tip">
+                    <strong>Run in Jupyter Notebook</strong>
+                    <p>You can run these Python visualizations interactively in Jupyter Notebook within your genomics environment.</p>
+                </div>
+
+                <h4>Install Jupyter in your genomics environment</h4>
+                <pre><code>
+conda activate genomics
+
+# Install Jupyter using mamba (faster than conda)
+mamba install -c conda-forge jupyter jupyterlab -y
+
+# Verify installation
+jupyter --version</code></pre>
+
+                <h4>Launch Jupyter Notebook</h4>
+                <pre><code># Make sure you're in the genomics directory
+cd ~/genomics
+
+# Launch Jupyter Notebook
+jupyter notebook</code></pre>
+                <p>This will open Jupyter in your web browser. Create a new Python 3 notebook and copy the visualization code into cells.</p>
+                <div class="info-box tip">
+                    <h3>Running in Jupyter Notebook </h3>
+                    <p>To run interactively in Jupyter, create a new notebook and paste this code into a cell:</p>
+
+                <p><h5>Import libraries</h5></p>
+                    <pre><code>
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 import numpy as np
 import os
-
+</code></pre>
+<p><h4>Load the dataset (gene counts)</h4></p>
+<pre><code>
 # Load data
 counts = pd.read_csv(os.path.expanduser("~/genomics/counts/gene_counts.tsv"), sep="\t", index_col=0)
 
 # Create output directory
 os.makedirs(os.path.expanduser("~/genomics/results/figures"), exist_ok=True)
-
+</code></pre>
+<p><h3>Bar charts to show total number of reads assigned to all genes per sample</h3></p>
+<pre><code>
 # 1. Library size (total counts per sample)
 fig, ax = plt.subplots(figsize=(10, 6))
 library_sizes = counts.sum()
-colors = ['#e74c3c' if 'KO' in s else '#3498db' for s in library_sizes.index]
+colors = ['red' if 'KO' in s else 'green' for s in library_sizes.index]
 ax.bar(library_sizes.index, library_sizes.values / 1e6, color=colors)
 ax.set_ylabel("Total Counts (millions)")
 ax.set_title("Library Sizes")
@@ -327,7 +351,9 @@ plt.xticks(rotation=45)
 plt.tight_layout()
 plt.savefig(os.path.expanduser("~/genomics/results/figures/library_sizes.png"), dpi=150)
 plt.close()
-
+</code></pre>
+<p><h3> plots to show variation in gene counts per sample</h3></p>
+<pre><code>
 # 2. Distribution of counts (log scale)
 fig, ax = plt.subplots(figsize=(10, 6))
 log_counts = np.log10(counts + 1)
@@ -340,28 +366,21 @@ plt.savefig(os.path.expanduser("~/genomics/results/figures/count_distribution.pn
 plt.close()
 
 print("Figures saved to ~/genomics/results/figures/")
-EOF
+    
 
-# Run the visualization
-python scripts/quick_viz.py</code></pre>
-            </div>
+</code></pre>
 
-            <div class="step" data-step="10">
+                    <p>Then add subsequent code blocks in new cells. This allows you to inspect variables and modify plots interactively.</p>
+                </div>
+            
+
+            <div class="info-box tip">
                 <h3>PCA plot to visualize sample relationships</h3>
+                
                 <pre><code># Create a PCA visualization script
-cat > scripts/pca_plot.py << 'EOF'
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-import os
 
-# Load count data
-counts = pd.read_csv(os.path.expanduser("~/genomics/counts/gene_counts.tsv"), sep="\t", index_col=0)
-
-# Filter genes with low counts (keep genes with at least 10 counts in at least one sample)
-counts_filtered = counts[counts.max(axis=1) >= 10]
+# Filter genes with low counts (keep genes with at least 3 counts in at least one sample)
+counts_filtered = counts[counts.max(axis=1) >= 3]
 print(f"Genes after filtering: {len(counts_filtered)}")
 
 # Log transform the data (add 1 to avoid log(0))
@@ -390,7 +409,7 @@ pca_df = pd.DataFrame({
 fig, ax = plt.subplots(figsize=(10, 8))
 
 # Define colors for conditions
-colors = {'KO': '#e74c3c', 'WT': '#3498db'}
+colors = {'KO': 'red', 'WT': 'green'}
 
 # Plot each condition
 for condition in ['KO', 'WT']:
@@ -427,15 +446,10 @@ plt.tight_layout()
 plt.savefig(os.path.expanduser("~/genomics/results/figures/pca_ko_vs_wt.png"), dpi=150)
 plt.close()
 
-print("PCA plot saved to ~/genomics/results/figures/pca_ko_vs_wt.png")
-print(f"\nVariance explained:")
-print(f"  PC1: {pca.explained_variance_ratio_[0]*100:.1f}%")
-print(f"  PC2: {pca.explained_variance_ratio_[1]*100:.1f}%")
-EOF
-
-# Run the PCA visualization
-python scripts/pca_plot.py</code></pre>
-
+# Run the cell and inspect the figure
+</code></pre>
+</div>
+</div>
                 <div class="info-box note">
                     <strong>Interpreting the PCA Plot</strong>
                     <p>PCA (Principal Component Analysis) reduces the dimensionality of gene expression data to visualize sample relationships:</p>
@@ -462,13 +476,8 @@ python scripts/pca_plot.py</code></pre>
 
             <div class="card">
                 <h3>Exercise 2: TPM Analysis</h3>
-                <pre><code># Find genes with TPM > 100 in at least one sample
-awk 'NR>1 {
-    max=0;
-    for(i=2;i<=NF;i++) if($i>max) max=$i;
-    if(max>100) print $1, max
-}' counts/gene_tpm.tsv | wc -l</code></pre>
-                <p>How many highly expressed genes are there?</p>
+                <ol><li>Find genes with TPM > 10 in one sample</li></ol>
+                <ol><li>How many genes are not expressed in all samples (TPM=0)</li></ol>
             </div>
         </section>
 
