@@ -282,10 +282,6 @@ head -20 counts/gene_counts.tsv | column -t
 # How many genes have counts?
 wc -l counts/gene_counts.tsv
 
-# How many genes have at least 10 reads in any sample?
-    if(max>=10) count++
-} END {print count " genes with >=10 reads"}' counts/gene_counts.tsv
-
 # View TPM values (normalized)
 head -20 counts/gene_tpm.tsv | column -t
 
