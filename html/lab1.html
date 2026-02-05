@@ -434,10 +434,9 @@ awk -F'\t' '$3=="transcript" {
   if (gene && tx) print tx "\t" gene
 }' Homo_sapiens.GRCh38.110.chr11.gtf > tx2gene.tsv
 
+
 # Add header
-sed -i '1i transcript_id\tgene_id' tx2gene.tsv  # Linux
-# For macOS: sed -i '' '1i\
-# transcript_id	gene_id' tx2gene.tsv
+printf "transcript_id\tgene_id\n" | cat - tx2gene.tsv > tmp && mv tmp tx2gene.tsv
 
 # View first few lines
 head tx2gene.tsv

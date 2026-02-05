@@ -134,13 +134,13 @@ NTGCAGTGCTGAGTCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGA
 gzip -dc raw_data/KO_1_SRR10045016_1.fastq.gz | head -12
 # gzip -dc works on both macOS and Linux
 
-# Count total number of lines in a file (each read = 4 lines)
+# Count total line in a file (each read = 4 lines)
 echo "Total lines in KO_1 R1:"
-gzip -dc raw_data/KO_1_SRR10045016_1.fastq.gz | wc -l | awk '{print $1/4}'
-
-# Count total reads in a file (each read = 4 lines)
-echo "Total reads in KO_1 R1:"
 gzip -dc raw_data/KO_1_SRR10045016_1.fastq.gz | wc -l
+
+# Count total number of reads in a file (each read = 4 lines)
+echo "Total reads in KO_1 R1:"
+gzip -dc raw_data/KO_1_SRR10045016_1.fastq.gz | wc -l | awk '{print $1/4}'
 
 # View a random sample of reads
 gzip -dc raw_data/KO_1_SRR10045016_1.fastq.gz | head -400 | tail -8</code></pre>
