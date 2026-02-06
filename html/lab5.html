@@ -71,7 +71,7 @@
                 <strong>Install required pacakges and setup the kernel</strong>
                 <pre><code>conda activate genomics
 
-mamba install -c conda-forge -c bioconda jupyter jupyterlab r-irkernel
+mamba install -c conda-forge -c bioconda jupyter jupyterlab r-irkernel -y
 
 R -e "IRkernel::installspec(name='genomics', displayname='R (DESeq2)')"
 
