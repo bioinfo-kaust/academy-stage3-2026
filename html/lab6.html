@@ -215,7 +215,28 @@ print(f"Saved to {output_dir}/pca_ko_vs_wt.png")</code></pre>
                     </ul>
                 </div>
             </div>
-            
+                </section>
+
+        <section>
+            <h2>Part 3: DESeq2 Result Plots</h2>
+
+            <div class="step" data-step="9">
+                <h3>Load DESeq2 results</h3>
+                <pre><code># Load DESeq2 results
+deseq_results = pd.read_csv(
+    os.path.expanduser("~/genomics/results/tables/deseq2_all_results.csv")
+)
+
+# Load normalized counts
+norm_counts = pd.read_csv(
+    os.path.expanduser("~/genomics/results/tables/normalized_counts.csv"),
+    index_col='gene_id'
+)
+
+print(f"Total genes in results: {len(deseq_results)}")
+print(f"\nDESeq2 results preview:")
+deseq_results.head()</code></pre>
+            </div>
 <div class="step" data-step="9">
     <h3>Sample Correlation Heatmap</h3>
     <pre><code># Sample-to-sample correlation heatmap
@@ -247,28 +268,6 @@ plt.savefig(f"{output_dir}/sample_correlation_heatmap.png", dpi=150, bbox_inches
 plt.show()
 print(f"Saved to {output_dir}/sample_correlation_heatmap.png")</code></pre>
 
-            </div>
-        </section>
-
-        <section>
-            <h2>Part 3: DESeq2 Result Plots</h2>
-
-            <div class="step" data-step="9">
-                <h3>Load DESeq2 results</h3>
-                <pre><code># Load DESeq2 results
-deseq_results = pd.read_csv(
-    os.path.expanduser("~/genomics/results/tables/deseq2_all_results.csv")
-)
-
-# Load normalized counts
-norm_counts = pd.read_csv(
-    os.path.expanduser("~/genomics/results/tables/normalized_counts.csv"),
-    index_col='gene_id'
-)
-
-print(f"Total genes in results: {len(deseq_results)}")
-print(f"\nDESeq2 results preview:")
-deseq_results.head()</code></pre>
             </div>
 
             <div class="step" data-step="10">
