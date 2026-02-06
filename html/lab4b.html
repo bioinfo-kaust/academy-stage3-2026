@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 4b: Pseudo-alignment (Salmon Only) - Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">Bioinformatics Specialization Program - KAUST Academy</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="labs.html" class="active">Labs</a></li>
+                <li><a href="projects.html">Projects</a></li>
+                <li><a href="setup.html">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <h1>Lab 4b: Pseudo-alignment (Salmon Only)</h1>
+
+        <div class="info-box warning">
+            <strong>Choose Your Path</strong>
+            <p>This lab uses Salmon pseudo-alignmentdirectly on FASTQ files. Choose this approach when you:</p>
+            <ul>
+                <li>Only need gene/transcript expression counts</li>
+                <li>Want faster processing (no genome alignment step)</li>
+                <li>Have limited computational resources</li>
+                <li>Don't need BAM files for visualization</li>
+            </ul>
+            <p>If you need BAM files for IGV visualization, splice junction analysis, or variant calling, use <a href="lab4a.html">Lab 4a: Genome Alignment (STAR + Salmon)</a> instead.</p>
+        </div>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Understand pseudo-alignment vs traditional alignment</li>
+                <li>Build a Salmon transcriptome index</li>
+                <li>Quantify transcript abundance with Salmon</li>
+                <li>Interpret Salmon output and quality metrics</li>
+                <li>Aggregate transcript counts to gene level with tximport</li>
+            </ul>
+        </div>
+
+        <section>
+            <h2>Why Salmon for RNA-seq Quantification?</h2>
+            <div class="card">
+                <h3>Salmon: Fast and Accurate Quantification</h3>
+                <p>Salmon uses a pseudo-alignment approach that is fundamentally different from traditional alignment:</p>
+                <ul>
+                    <li><strong>Pseudo-alignment:</strong> Maps reads to transcripts without full base-by-base alignment</li>
+                    <li><strong>Very fast:</strong> 10-100x faster than STAR alignment</li>
+                    <li><strong>Memory efficient:</strong> Requires only ~4 GB RAM (vs 32 GB for STAR)</li>
+                    <li><strong>Accurate:</strong> Comparable or better accuracy for gene-level counts</li>
+                    <li><strong>Bias correction:</strong> Built-in GC and sequence-specific bias correction</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>Pseudo-alignment vs Traditional Alignment</h3>
+                <table class="schedule-table">
+                    <tr><th>Feature</th><th>Traditional (STAR)</th><th>Pseudo-alignment (Salmon)</th></tr>
+                    <tr><td>Speed</td><td>Slower</td><td>10-100x faster</td></tr>
+                    <tr><td>Memory</td><td>~32 GB (human)</td><td>~4 GB</td></tr>
+                    <tr><td>Output</td><td>BAM files + counts</td><td>Counts only</td></tr>
+                    <tr><td>Visualization</td><td>IGV compatible</td><td>No BAM files</td></tr>
+                    <tr><td>Splice info</td><td>Yes</td><td>No</td></tr>
+                    <tr><td>Use case</td><td>Full analysis</td><td>Expression quantification</td></tr>
+                </table>
+            </div>
+
+            <div class="info-box tip">
+                <strong>When to Use Pseudo-alignment</strong>
+                <p>Salmon pseudo-alignment is ideal for differential expression studies where you only need gene counts. It's the preferred method in many modern RNA-seq pipelines (e.g., nf-core/rnaseq).</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Check Reference Files</h2>
+            <p>Make sure the steps in <a href="lab1.html">Lab 1</a> Part 3-5 were successful. You need the transcriptome FASTA file:</p>
+            <pre><code>ls -lh ~/genomics/references/transcriptome_chr11.fa
+ls -lh ~/genomics/references/Homo_sapiens.GRCh38.110.chr11.gtf</code></pre>
+        </section>
+
+        <section>
+            <h2>Part 1: Build Salmon Transcriptome Index</h2>
+            <p>Salmon requires an index built from transcript sequences (cDNA), not the genome.</p>
+
+            <div class="step" data-step="1">
+                <h3>Create the Salmon index</h3>
+                <pre><code>cd ~/genomics
+
+# Activate environment
+conda activate genomics
+
+# Build Salmon index from chr11 transcriptome
+# This takes 1-2 minutes
+salmon index \
+    -t references/transcriptome_chr11.fa \
+    -i references/salmon_index \
+    --threads 4
+
+# Check the index files
+ls -lh references/salmon_index/</code></pre>
+
+                <div class="info-box note">
+                    <strong>Transcriptome Reference</strong>
+                    <p>Unlike STAR which uses the genome, Salmon uses transcript sequences (cDNA). This is why it's faster - it only considers expressed sequences, not the entire genome.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 2: Quantify Samples with Salmon</h2>
+
+            <div class="step" data-step="2">
+                <h3>Quantify one sample</h3>
+                <pre><code>cd ~/genomics
+
+# Create output directory
+mkdir -p salmon_quant
+
+# Quantify KO_1 sample
+salmon quant \
+    -i references/salmon_index \
+    -l A \
+    -1 trimmed_data/KO_1_SRR10045016_1.trimmed.fastq.gz \
+    -2 trimmed_data/KO_1_SRR10045016_2.trimmed.fastq.gz \
+    -o salmon_quant/KO_1 \
+    --threads 4 \
+    --validateMappings \
+    --gcBias \
+    --seqBias
+
+# Check output
+ls -lh salmon_quant/KO_1/</code></pre>
+
+                <div class="info-box note">
+                    <strong>Key Parameters</strong>
+                    <ul>
+                        <li><code>-l A</code>: Auto-detect library type (stranded/unstranded)</li>
+                        <li><code>--validateMappings</code>: More accurate quasi-mapping</li>
+                        <li><code>--gcBias</code>: Correct for GC content bias</li>
+                        <li><code>--seqBias</code>: Correct for sequence-specific bias at read starts</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Quantify all samples</h3>
+                <pre><code>cd ~/genomics
+
+# Create logs directory
+mkdir -p logs
+
+# Define samples
+SAMPLES="KO_1_SRR10045016 KO_2_SRR10045017 KO_3_SRR10045018 WT_1_SRR10045019 WT_2_SRR10045020 WT_3_SRR10045021"
+
+# Process each sample
+for SAMPLE in $SAMPLES; do
+    # Extract short name (KO_1, KO_2, etc.)
+    SHORT_NAME=$(echo $SAMPLE | cut -d'_' -f1,2)
+    echo "Quantifying $SHORT_NAME..."
+
+    salmon quant \
+        -i references/salmon_index \
+        -l A \
+        -1 trimmed_data/${SAMPLE}_1.trimmed.fastq.gz \
+        -2 trimmed_data/${SAMPLE}_2.trimmed.fastq.gz \
+        -o salmon_quant/${SHORT_NAME} \
+        --threads 4 \
+        --validateMappings \
+        --gcBias \
+        --seqBias \
+        2>> logs/salmon.log
+done
+
+echo "Quantification complete!"
+ls salmon_quant/</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 3: Understanding Salmon Output</h2>
+
+            <div class="step" data-step="4">
+                <h3>Explore the quantification file</h3>
+                <pre><code>cd ~/genomics
+
+# View the quant.sf file
+head -10 salmon_quant/KO_1/quant.sf
+
+# Column descriptions:
+# Name: Transcript ID (Ensembl format)
+# Length: Transcript length in bp
+# EffectiveLength: Length adjusted for fragment size and bias
+# TPM: Transcripts Per Million (normalized expression)
+# NumReads: Estimated number of reads mapping to this transcript</code></pre>
+
+                <div class="card">
+                    <h3>Understanding Salmon Metrics</h3>
+                    <table class="schedule-table">
+                        <tr><th>Metric</th><th>Description</th><th>Use</th></tr>
+                        <tr><td>NumReads</td><td>Estimated read count</td><td>Input for DESeq2</td></tr>
+                        <tr><td>TPM</td><td>Transcripts Per Million</td><td>Cross-sample comparison</td></tr>
+                        <tr><td>EffectiveLength</td><td>Bias-corrected length</td><td>Internal calculation</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Check mapping rates</h3>
+                <pre><code>cd ~/genomics
+
+# View the log file for mapping statistics
+cat salmon_quant/KO_1/logs/salmon_quant.log
+
+# Extract mapping rate for all samples
+echo "=== Salmon Mapping Rates ==="
+for dir in salmon_quant/*/; do
+    sample=$(basename $dir)
+    rate=$(grep "Mapping rate" $dir/logs/salmon_quant.log | awk '{print $NF}')
+    echo "$sample: $rate"
+done</code></pre>
+
+                <div class="card">
+                    <h3>Expected Mapping Rates</h3>
+                    <table class="schedule-table">
+                        <tr><th>Mapping Rate</th><th>Quality</th><th>Notes</th></tr>
+                        <tr><td>>70%</td><td>Good</td><td>Expected for most RNA-seq</td></tr>
+                        <tr><td>50-70%</td><td>Acceptable</td><td>May indicate some issues</td></tr>
+                        <tr><td><50%</td><td>Investigate</td><td>Check data quality or reference</td></tr>
+                    </table>
+                    <p><em>Note: Mapping rates for chromosome-specific data may be lower than whole-genome data.</em></p>
+                </div>
+            </div>
+
+            <div class="step" data-step="6">
+                <h3>Explore additional output files</h3>
+                <pre><code>cd ~/genomics
+
+# List all output files
+ls -la salmon_quant/KO_1/
+
+# View the metadata
+cat salmon_quant/KO_1/aux_info/meta_info.json
+
+# View library type detection
+cat salmon_quant/KO_1/lib_format_counts.json</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 4: Aggregate to Gene Level with tximport</h2>
+            <p>Salmon outputs transcript-level counts. For differential expression with DESeq2, we aggregate to gene level using tximport.</p>
+
+            <div class="step" data-step="7">
+                <h3>Download the tximport script</h3>
+                <p>We provide a reusable R script that handles both tx2gene generation from GTF and tximport aggregation.</p>
+                <pre><code>cd ~/genomics
+
+
+# Create scripts directorys
+mkdir -p scripts
+
+# Download the tximport script from GitHub
+wget -O scripts/run_tximport.R \
+    https://raw.githubusercontent.com/bioinfo-kaust/academy-stage3-2026/refs/heads/main/scripts/run_tximport.R
+    
+# Make it executable (optional)
+chmod +x scripts/run_tximport.R
+
+# View script help
+Rscript scripts/run_tximport.R --help</code></pre>
+
+                <div class="info-box note">
+                    <strong>Script Features</strong>
+                    <ul>
+                        <li>Automatically generates tx2gene mapping from your GTF file</li>
+                        <li>Auto-detects sample directories in salmon_quant folder</li>
+                        <li>Outputs count matrices, TPM values, and sample info</li>
+                        <li>Creates tximport.rds object ready for DESeq2</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="8">
+                <h3>Run tximport</h3>
+                <pre><code>cd ~/genomics
+
+# Run the tximport script with your GTF and Salmon output
+Rscript scripts/run_tximport.R \
+    --gtf references/Homo_sapiens.GRCh38.110.chr11.gtf \
+    --salmon_dir salmon_quant \
+    --outdir counts
+
+# Check the output files
+ls -lh counts/</code></pre>
+
+                <div class="info-box note">
+                    <strong>Script Parameters</strong>
+                    <ul>
+                        <li><code>--gtf</code>: Path to GTF annotation file (used to generate tx2gene mapping)</li>
+                        <li><code>--salmon_dir</code>: Directory containing Salmon output (one subdirectory per sample)</li>
+                        <li><code>--outdir</code>: Output directory for count matrices</li>
+                        <li><code>--tx2gene</code>: (Optional) Use existing tx2gene.tsv instead of generating from GTF</li>
+                        <li><code>--samples</code>: (Optional) Comma-separated sample list (auto-detected if not provided)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="9">
+                <h3>Explore the expression matrix</h3>
+                <pre><code>cd ~/genomics
+
+# View the first few genes in the count matrix
+head -10 counts/gene_counts.tsv | column -t
+
+# How many genes have counts?
+wc -l counts/gene_counts.tsv
+
+# View TPM values (normalized)
+head -10 counts/gene_tpm.tsv | column -t
+
+# View sample info (auto-generated)
+cat counts/sample_info.tsv
+
+# Open the count matrix in MS Excel and get familiar with the content</code></pre>
+
+                <div class="info-box tip">
+                    <strong>Ready for Differential Expression</strong>
+                    <p>You now have gene-level count matrices ready for DESeq2 analysis in Lab 5. The script generated:</p>
+                    <ul>
+                        <li><code>gene_counts.tsv</code> - Raw counts for DESeq2</li>
+                        <li><code>gene_tpm.tsv</code> - TPM values for visualization</li>
+                        <li><code>sample_info.tsv</code> - Sample metadata</li>
+                        <li><code>tx2gene.tsv</code> - Transcript-to-gene mapping</li>
+                        <li><code>tximport.rds</code> - R object for DESeq2</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Exercises</h2>
+            <div class="card">
+                <h3>Exercise 1: Salmon Analysis</h3>
+                <ol>
+                    <li>Which sample has the highest mapping rate?</li>
+                    <li>How many transcripts were quantified in total?</li>
+                    <li>What library type did Salmon detect? (Check lib_format_counts.json)</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 2: Gene Expression</h3>
+                <ol>
+                    <li>Find the top 5 most highly expressed genes (by TPM) in KO samples</li>
+                    <li>Find the top 5 most highly expressed genes in WT samples</li>
+                    <li>Are they the same genes? What might this tell you?</li>
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 3: Compare Approaches</h3>
+                <p>Consider these questions:</p>
+                <ol>
+                    <li>When would you choose STAR + Salmon over Salmon only?</li>
+                    <li>What information is lost when you skip genome alignment?</li>
+                    <li>For a differential expression study, does it matter which approach you use?</li>
+                </ol>
+            </div>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you have:</p>
+            <ul>
+                <li>Understood the difference between pseudo-alignment and traditional alignment</li>
+                <li>Built a Salmon transcriptome index</li>
+                <li>Quantified all samples using Salmon's fast pseudo-alignment</li>
+                <li>Interpreted Salmon output files and quality metrics</li>
+                <li>Aggregated transcript counts to gene level with tximport</li>
+                <li>Prepared gene-level count matrices for DESeq2</li>
+            </ul>
+            <p><strong>Next:</strong> <a href="lab5.html">Lab 5 - Differential Expression Analysis</a></p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Bioinformatics Specialization Program 2026 - KAUST Academy</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+
+        // Add copy buttons to all code blocks
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre');
+            codeBlocks.forEach(function(pre) {
+                const container = document.createElement('div');
+                container.className = 'code-container';
+                pre.parentNode.insertBefore(container, pre);
+                container.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.addEventListener('click', function() {
+                    const code = pre.querySelector('code');
+                    const text = code ? code.textContent : pre.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(function() {
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+                container.appendChild(copyBtn);
+            });
+        });
+    </script>
+</body>
+</html>

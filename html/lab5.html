@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab 5: Counting & Expression Matrix Construction - Bioinformatics 2026</title>
+    <title>Lab 5: Differential Expression Analysis - Bioinformatics 2026</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
@@ -22,458 +22,192 @@
     </nav>
 
     <main>
-        <h1>Lab 5: Quantification & Expression Matrix Construction</h1>
+        <h1>Lab 5: Differential Expression Analysis</h1>
 
         <div class="info-box note">
             <strong>Learning Objectives</strong>
             <ul>
-                <li>Understand transcript vs gene-level quantification</li>
-                <li>Run Salmon for fast transcript quantification</li>
-                <li>Use tximport to aggregate transcript counts to gene level</li>
-                <li>Build and explore an expression count matrix</li>
+                <li>Understand the DESeq2 statistical framework</li>
+                <li>Run differential expression analysis comparing KO vs WT</li>
+                <li>Interpret DE results (log2 fold change, p-values, adjusted p-values)</li>
+                <li>Filter and export significant differentially expressed genes</li>
             </ul>
         </div>
 
         <section>
-            <h2>Quantification Approaches</h2>
+            <h2>DESeq2 Overview</h2>
             <div class="card">
-                <h3>Alignment-based vs Alignment-free Quantification</h3>
+                <h3>Why DESeq2?</h3>
+                <p>DESeq2 is the gold-standard tool for differential expression analysis because it:</p>
+                <ul>
+                    <li>Models count data with negative binomial distribution</li>
+                    <li>Performs size factor normalization to account for library size differences</li>
+                    <li>Uses shrinkage estimators for dispersion and fold changes</li>
+                    <li>Properly controls false discovery rate (FDR) with Benjamini-Hochberg correction</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>Key Concepts</h3>
                 <table class="schedule-table">
-                    <tr><th>Method</th><th>Tool</th><th>Pros</th><th>Cons</th></tr>
-                    <tr>
-                        <td>Alignment-based</td>
-                        <td>STAR + salmon/featureCounts</td>
-                        <td>Accurate for well-annotated genomes; provides BAM files</td>
-                        <td>Slower; requires more disk space</td>
-                    </tr>
-                    <tr>
-                        <td>Alignment-free</td>
-                        <td>Salmon, kallisto</td>
-                        <td>Very fast; handles transcript isoforms well</td>
-                        <td>No BAM output; missing BAM QC output</td>
-                    </tr>
+                    <tr><th>Term</th><th>Description</th></tr>
+                    <tr><td>log2 Fold Change</td><td>log2(KO/WT) - positive means upregulated in KO</td></tr>
+                    <tr><td>p-value</td><td>Probability of observing the difference by chance</td></tr>
+                    <tr><td>padj (adjusted p-value)</td><td>p-value corrected for multiple testing (FDR)</td></tr>
+                    <tr><td>baseMean</td><td>Average normalized count across all samples</td></tr>
                 </table>
-                <p>We'll use <strong>Salmon</strong> for its speed and accuracy in transcript-level quantification.</p>
+            </div>
+
+            <div class="card">
+                <h3>Output - Lab 4a: <a href="https://raw.githubusercontent.com/bioinfo-kaust/academy-stage3-2026/refs/heads/main/output/counts.zip">Download counts.zip</a></h3>
+                <p>In case you have not obtained the results from Lab 4 (the gene count table), you can download <a href="https://raw.githubusercontent.com/bioinfo-kaust/academy-stage3-2026/refs/heads/main/output/counts.zip">lab4-output</a> folder and unzip it. It contains all files that are required for this lab and the remaining ones.</p>
             </div>
         </section>
 
         <section>
-            <h2>Part 1: Build Salmon Index</h2>
+            <h2>Part 1: Setup & Start Jupyter Notebook</h2>
 
             <div class="step" data-step="1">
-                <h3>Create Salmon transcriptome index</h3>
-                <pre><code>cd ~/genomics
+                <strong>Install required pacakges and setup the kernel</strong>
+                <pre><code>conda activate genomics
 
-# Activate environment
-conda activate genomics
+mamba install -c conda-forge -c bioconda jupyter jupyterlab r-irkernel
 
-# Build Salmon index from chr11 transcriptome
-salmon index \
-    -t references/transcriptome_chr11.fa \
-    -i references/salmon_index \
-    --threads 4
-
-# Check the index
-ls -lh references/salmon_index/</code></pre>
-
-                <div class="info-box note">
-                    <strong>Why Transcriptome Instead of Genome?</strong>
-                    <p>Salmon uses a transcriptome reference (cDNA sequences) rather than the genome. This is faster and more appropriate for RNA-seq differential expression analysis (only need to quantify kown transcripts).</p>
-                </div>
-            </div>
-        </section>
-
-        <section>
-            <h2>Part 2: Quantify Transcripts with Salmon</h2>
-
-            <div class="step" data-step="2">
-                <h3>Run Salmon on one sample</h3>
-                <pre><code>cd ~/genomics
-
-# Quantify KO_1 sample
-salmon quant \
-    -i references/salmon_index \
-    -l A \
-    -1 trimmed_data/KO_1_SRR10045016_1.trimmed.fastq.gz \
-    -2 trimmed_data/KO_1_SRR10045016_2.trimmed.fastq.gz \
-    -o salmon_quant/KO_1 \
-    --threads 4 \
-    --validateMappings \
-    --gcBias \
-    --seqBias
-
-# View output files
-ls -lh salmon_quant/KO_1/</code></pre>
-
-                <div class="info-box note">
-                    <strong>Salmon Parameters</strong>
-                    <ul>
-                        <li><code>-l A</code>: Auto-detect library type</li>
-                        <li><code>--validateMappings</code>: More accurate mapping</li>
-                        <li><code>--gcBias</code>: Correct for GC content bias</li>
-                        <li><code>--seqBias</code>: Correct for sequence-specific bias</li>
-                    </ul>
-                </div>
-            
-            <div class="info-box note">
-            <strong>Check Salmon Log File</strong>
-            <div>
-                <p>Open the log file and check the output and metrics<code>salmon_quant/KO_1/logs/salmon_quant.log</code></p>
-            </div>
-            </div>
-            
-            <div class="step" data-step="3">
-                <h3>Quantify all samples</h3>
-                <pre><code>cd ~/genomics
-
-# Define samples
-SAMPLES="KO_1_SRR10045016 KO_2_SRR10045017 KO_3_SRR10045018 WT_1_SRR10045019 WT_2_SRR10045020 WT_3_SRR10045021"
-
-# Process each sample
-for SAMPLE in $SAMPLES; do
-    # Extract short name (KO_1, KO_2, etc.)
-    SHORT_NAME=$(echo $SAMPLE | cut -d'_' -f1,2)
-    echo "Quantifying $SHORT_NAME..."
-
-    salmon quant \
-        -i references/salmon_index \
-        -l A \
-        -1 trimmed_data/${SAMPLE}_1.trimmed.fastq.gz \
-        -2 trimmed_data/${SAMPLE}_2.trimmed.fastq.gz \
-        -o salmon_quant/${SHORT_NAME} \
-        --threads 4 \
-        --validateMappings \
-        --gcBias \
-        --seqBias \
-        2>> logs/salmon.log
-done
-
-echo "Quantification complete!"
-ls salmon_quant/</code></pre>
-            </div>
-
-            <div class="step" data-step="4">
-                <h3>Explore Salmon output</h3>
-                <pre><code># View the quantification file
-head -20 salmon_quant/KO_1/quant.sf
-
-# The columns are:
-# Name: Transcript ID
-# Length: Transcript length
-# EffectiveLength: Length adjusted for bias
-# TPM: Transcripts Per Million
-# NumReads: Estimated read count
-
-# Check mapping rate
-grep "Mapping rate" salmon_quant/KO_1/logs/salmon_quant.log
-
-                </code></pre>
-            </div>
-        </section>
-
-        <section>
-            <h2>Part 3: Aggregate to Gene Level with tximport</h2>
-            <p>Salmon provides transcript-level counts. We use tximport in R to aggregate these to gene level for DESeq2.</p>
-
-            <div class="step" data-step="5">
-                <h3>Create the tximport R script</h3>
-                <pre><code># Create the R script
-cat > scripts/tximport.R << 'EOF'
-# =============================================================================
-# Aggregate Transcript Counts to Gene Level with tximport
-# =============================================================================
-
-library(tximport)
-
-cat("Loading transcript-to-gene mapping...\n")
-
-# Read the tx2gene mapping file
-tx2gene <- read.table("~/genomics/references/tx2gene.tsv",
-                      sep = "\t", header = TRUE)
-colnames(tx2gene) <- c("TXNAME", "GENEID")
-
-cat(paste0("  Loaded ", nrow(tx2gene), " transcript-gene pairs\n"))
-
-# Define samples and their quant files
-samples <- c("KO_1", "KO_2", "KO_3", "WT_1", "WT_2", "WT_3")
-conditions <- c("KO", "KO", "KO", "WT", "WT", "WT")
-
-files <- file.path("~/genomics/salmon_quant", samples, "quant.sf")
-names(files) <- samples
-
-# Check files exist
-cat("Checking quant files...\n")
-for (f in files) {
-    if (file.exists(f)) {
-        cat(paste0("  Found: ", f, "\n"))
-    } else {
-        stop(paste0("Missing: ", f))
-    }
-}
-
-# Import with tximport
-cat("\nImporting Salmon counts...\n")
-txi <- tximport(files, type = "salmon", tx2gene = tx2gene, ignoreTxVersion = TRUE)
-
-cat(paste0("  Imported ", nrow(txi$counts), " genes\n"))
-
-# Create output directory
-dir.create("~/genomics/counts", showWarnings = FALSE)
-
-# Save count matrix
-counts <- as.data.frame(round(txi$counts))
-counts$gene_id <- rownames(counts)
-counts <- counts[, c("gene_id", samples)]
-write.table(counts, "~/genomics/counts/gene_counts.tsv",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-# Save TPM matrix
-tpm <- as.data.frame(txi$abundance)
-tpm$gene_id <- rownames(tpm)
-tpm <- tpm[, c("gene_id", samples)]
-write.table(tpm, "~/genomics/counts/gene_tpm.tsv",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-# Save sample info
-sample_info <- data.frame(
-    sample_id = samples,
-    condition = conditions
-)
-write.table(sample_info, "~/genomics/counts/sample_info.tsv",
-            sep = "\t", quote = FALSE, row.names = FALSE)
-
-# Save tximport object for DESeq2
-saveRDS(txi, "~/genomics/counts/tximport.rds")
-
-cat("\n=== Output files ===\n")
-cat("  counts/gene_counts.tsv\n")
-cat("  counts/gene_tpm.tsv\n")
-cat("  counts/sample_info.tsv\n")
-cat("  counts/tximport.rds\n")
-cat("\nDone!\n")
-EOF
-
-# Make scripts directory if needed
-mkdir -p scripts</code></pre>
-            </div>
-
-            <div class="step" data-step="6">
-                <h3>Run tximport</h3>
-                <pre><code>cd ~/genomics
-
-# Run the R script
-Rscript scripts/tximport.R
-
-# Check the output files
-ls -lh counts/</code></pre>
-            </div>
-        </section>
-
-        <section>
-            <h2>Part 4: Explore the Expression Matrix</h2>
-
-            <div class="step" data-step="7">
-                <h3>Examine the count matrix</h3>
-                <pre><code>cd ~/genomics
-
-# View the first few genes
-head -20 counts/gene_counts.tsv | column -t
-
-# How many genes have counts?
-wc -l counts/gene_counts.tsv
-
-# View TPM values (normalized)
-head -20 counts/gene_tpm.tsv | column -t
-
-#Open the count matrix in MS Excel and get familiar with the content</code></pre>
-            </div>
-            
-            <div class="step" data-step="9">
-                <h3>QC Visualization with Python</h3>
-
-                <div class="info-box tip">
-                    <strong>Run in Jupyter Notebook</strong>
-                    <p>You can run these Python visualizations interactively in Jupyter Notebook within your genomics environment.</p>
-                </div>
-
-                <h4>Install Jupyter in your genomics environment</h4>
-                <pre><code>
-conda activate genomics
-
-# Install Jupyter using mamba (faster than conda)
-mamba install -c conda-forge jupyter jupyterlab -y
+R -e "IRkernel::installspec(name='genomics', displayname='R (DESeq2)')"
 
 # Verify installation
-jupyter --version</code></pre>
-
-                <h4>Launch Jupyter Notebook</h4>
-                <pre><code># Make sure you're in the genomics directory
-cd ~/genomics
+jupyter --version
+    </code></pre>
+            </div>
+            <div class="step" data-step="2">
+                <strong>Start jupyter notebook</strong>
+                <pre><code>cd ~/genomics
 
 # Launch Jupyter Notebook
 jupyter notebook</code></pre>
-                <p>This will open Jupyter in your web browser. Create a new Python 3 notebook and copy the visualization code into cells.</p>
-                <div class="info-box tip">
-                    <h3>Running in Jupyter Notebook </h3>
-                    <p>To run interactively in Jupyter, create a new notebook and paste this code into a cell:</p>
+            </div>
+            <div class="step" data-step="3">
+                <ul>
+                    <strong>Create a new notebook:</strong> 
+                    <li>In Jupyter (or JupyterLab), choose <em>File → New → Notebook</em>, then select the R kernel.</li>
+                    <li>Set working directory: In the first cell, run <code>setwd("~/genomics")</code> so paths below work.</li>
+                    <li>Copy each code block below into a separate cell and run them in order (Shift+Enter). </li>
+                </ul>
+            </div>
+            </div>
+            <section>
+                <h2>Part 2: Run DESeq2 Analysis</h2>
+            <div class="step" data-step="1">
+                <h3>Load libraries</h3>
+                <pre><code>library(DESeq2)
+library(tximport)</code></pre>
+            </div>
 
-                <p><h5>Import libraries</h5></p>
-                    <pre><code>
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-import numpy as np
-import os
-</code></pre>
-<p><h4>Load the dataset (gene counts)</h4></p>
-<pre><code>
-# Load data
-counts = pd.read_csv(os.path.expanduser("~/genomics/counts/gene_counts.tsv"), sep="\t", index_col=0)
+            <div class="step" data-step="2">
+                <h3>Load data</h3>
+                <pre><code>txi <- readRDS("~/genomics/counts/tximport.rds")
+sample_info <- read.table("~/genomics/counts/sample_info.tsv", header = TRUE, sep = "\t")
 
-# Create output directory
-os.makedirs(os.path.expanduser("~/genomics/results/figures"), exist_ok=True)
-</code></pre>
-<p><h3>Bar charts to show total number of reads assigned to all genes per sample</h3></p>
-<pre><code>
-# 1. Library size (total counts per sample)
-fig, ax = plt.subplots(figsize=(10, 6))
-library_sizes = counts.sum()
-colors = ['red' if 'KO' in s else 'green' for s in library_sizes.index]
-ax.bar(library_sizes.index, library_sizes.values / 1e6, color=colors)
-ax.set_ylabel("Total Counts (millions)")
-ax.set_title("Library Sizes")
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.savefig(os.path.expanduser("~/genomics/results/figures/library_sizes.png"), dpi=150)
-plt.close()
-</code></pre>
-<p><h3> plots to show variation in gene counts per sample</h3></p>
-<pre><code>
-# 2. Distribution of counts (log scale)
-fig, ax = plt.subplots(figsize=(10, 6))
-log_counts = np.log10(counts + 1)
-log_counts.boxplot(ax=ax)
-ax.set_ylabel("log10(counts + 1)")
-ax.set_title("Count Distribution per Sample")
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.savefig(os.path.expanduser("~/genomics/results/figures/count_distribution.png"), dpi=150)
-plt.close()
+# Set factor levels (WT as reference)
+sample_info$condition <- factor(sample_info$condition, levels = c("WT", "KO"))
 
-print("Figures saved to ~/genomics/results/figures/")
-    
+cat(paste0("Samples: ", nrow(sample_info), "\n"))
+cat(paste0("Genes: ", nrow(txi$counts), "\n"))
+cat(paste0("Conditions: ", paste(levels(sample_info$condition), collapse = " vs "), "\n"))</code></pre>
+            </div>
 
-</code></pre>
+            <div class="step" data-step="3">
+                <h3>Create DESeq2 dataset and pre-filter</h3>
+                <pre><code>dds <- DESeqDataSetFromTximport(txi, colData = sample_info, design = ~ condition)
 
-                    <p>Then add subsequent code blocks in new cells. This allows you to inspect variables and modify plots interactively.</p>
-                </div>
-            
+# Pre-filtering: Remove genes with very low counts
+keep <- rowSums(counts(dds) >= 10) >= 3
+dds <- dds[keep, ]
+cat(paste0("Genes after filtering (>=10 counts in >=3 samples): ", nrow(dds), "\n"))</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Run DESeq2 and get results</h3>
+                <pre><code>dds <- DESeq(dds)
+                res <- results(dds, contrast = c("condition", "KO", "WT"))
+res <- res[order(res$padj), ]
+
+summary(res)
+
+# Significant: padj < 0.05 and |log2FC| > 1
+sig_genes <- subset(res, padj < 0.05 & abs(log2FoldChange) > 1)
+sig_genes <- sig_genes[order(sig_genes$padj), ]
+
+cat(paste0("Total significant genes: ", nrow(sig_genes), "\n"))
+cat(paste0("Upregulated in KO: ", sum(sig_genes$log2FoldChange > 0, na.rm = TRUE), "\n"))
+cat(paste0("Downregulated in KO: ", sum(sig_genes$log2FoldChange < 0, na.rm = TRUE), "\n"))</code></pre>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Save results</h3>
+                <pre><code>dir.create("~/genomics/results/tables", showWarnings = FALSE, recursive = TRUE)
+
+# All results
+all_res <- as.data.frame(res)
+all_res$gene_id <- rownames(all_res)
+all_res <- all_res[, c("gene_id", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue", "padj")]
+write.csv(all_res, "~/genomics/results/tables/deseq2_all_results.csv", row.names = FALSE)
+
+# Significant genes only
+sig_res <- as.data.frame(sig_genes)
+sig_res$gene_id <- rownames(sig_res)
+sig_res <- sig_res[, c("gene_id", "baseMean", "log2FoldChange", "lfcSE", "stat", "pvalue", "padj")]
+write.csv(sig_res, "~/genomics/results/tables/deseq2_significant.csv", row.names = FALSE)
+
+# Normalized counts
+norm_counts <- as.data.frame(counts(dds, normalized = TRUE))
+norm_counts$gene_id <- rownames(norm_counts)
+write.csv(norm_counts, "~/genomics/results/tables/normalized_counts.csv", row.names = FALSE)
+
+# Save DESeq2 object for later use
+saveRDS(dds, "~/genomics/results/deseq2_object.rds")</code></pre>
+            </div>
+            <div class="info-box tip">
+                <h3>Optional: Alternative Approach - Run from Command Line</h3>
+                <p>To run as a script instead of a notebook, save all blocks above into <code>deseq2_analysis.R</code>, then:</p>
+                <pre><code>cd ~/genomics
+Rscript scripts/deseq2_analysis.R
+ls -lh results/tables/</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 3: Understanding the Results</h2>
+            <strong>Open the results/tables/deseq2_significant.csv file in MS Excel and check the output</strong>
+            <div class="card">
+                <h3>Interpreting the Output</h3>
+                <ul>
+                    <li><strong>Positive log2FC:</strong> Gene is upregulated in KO (higher expression when TDP-43 is knocked out)</li>
+                    <li><strong>Negative log2FC:</strong> Gene is downregulated in KO (lower expression when TDP-43 is knocked out)</li>
+                    <li><strong>padj < 0.05:</strong> Statistically significant after multiple testing correction</li>
+                    <li><strong>|log2FC| > 1:</strong> At least 2-fold change in expression</li>
+                </ul>
+            </div>
 
             <div class="info-box tip">
-                <h3>PCA plot to visualize sample relationships</h3>
-                
-                <pre><code># Create a PCA visualization script
-
-# Filter genes with low counts (keep genes with at least 3 counts in at least one sample)
-counts_filtered = counts[counts.max(axis=1) >= 3]
-print(f"Genes after filtering: {len(counts_filtered)}")
-
-# Log transform the data (add 1 to avoid log(0))
-log_counts = np.log2(counts_filtered + 1)
-
-# Transpose so samples are rows and genes are columns
-data_for_pca = log_counts.T
-
-# Standardize the data
-scaler = StandardScaler()
-data_scaled = scaler.fit_transform(data_for_pca)
-
-# Perform PCA
-pca = PCA(n_components=2)
-pca_result = pca.fit_transform(data_scaled)
-
-# Create a dataframe with PCA results
-pca_df = pd.DataFrame({
-    'PC1': pca_result[:, 0],
-    'PC2': pca_result[:, 1],
-    'Sample': data_for_pca.index,
-    'Condition': ['KO' if 'KO' in s else 'WT' for s in data_for_pca.index]
-})
-
-# Plot PCA
-fig, ax = plt.subplots(figsize=(10, 8))
-
-# Define colors for conditions
-colors = {'KO': 'red', 'WT': 'green'}
-
-# Plot each condition
-for condition in ['KO', 'WT']:
-    mask = pca_df['Condition'] == condition
-    ax.scatter(
-        pca_df.loc[mask, 'PC1'],
-        pca_df.loc[mask, 'PC2'],
-        c=colors[condition],
-        label=condition,
-        s=150,
-        edgecolors='black',
-        linewidth=1.5
-    )
-
-# Add sample labels
-for idx, row in pca_df.iterrows():
-    ax.annotate(
-        row['Sample'],
-        (row['PC1'], row['PC2']),
-        xytext=(5, 5),
-        textcoords='offset points',
-        fontsize=10
-    )
-
-# Add labels and title
-ax.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]*100:.1f}% variance)")
-ax.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]*100:.1f}% variance)")
-ax.set_title("PCA of Gene Expression: KO vs WT")
-ax.legend(title="Condition", loc='best')
-ax.axhline(y=0, color='gray', linestyle='--', alpha=0.3)
-ax.axvline(x=0, color='gray', linestyle='--', alpha=0.3)
-
-plt.tight_layout()
-plt.savefig(os.path.expanduser("~/genomics/results/figures/pca_ko_vs_wt.png"), dpi=150)
-plt.close()
-
-# Run the cell and inspect the figure
-</code></pre>
-</div>
-</div>
-                <div class="info-box note">
-                    <strong>Interpreting the PCA Plot</strong>
-                    <p>PCA (Principal Component Analysis) reduces the dimensionality of gene expression data to visualize sample relationships:</p>
-                    <ul>
-                        <li><strong>Samples that cluster together</strong> have similar expression profiles</li>
-                        <li><strong>KO samples (red)</strong> should cluster separately from <strong>WT samples (blue)</strong></li>
-                        <li><strong>PC1</strong> captures the most variance - often the biological condition of interest</li>
-                        <li><strong>Replicates</strong> should cluster together within each condition</li>
-                    </ul>
-                </div>
+                <strong>Biological Interpretation</strong>
+                <p>Since TDP-43 is an RNA-binding protein involved in RNA processing:</p>
+                <ul>
+                    <li>Upregulated genes in KO may be normally suppressed by TDP-43</li>
+                    <li>Downregulated genes in KO may depend on TDP-43 for proper expression/stability</li>
+                </ul>
             </div>
         </section>
 
         <section>
             <h2>Exercises</h2>
             <div class="card">
-                <h3>Exercise 1: Explore Quantification Results</h3>
+                <h3>Exercise 1: Results Exploration</h3>
                 <ol>
-                    <li>What is the mapping rate for each sample? Are they consistent?</li>
-                    <li>How many genes have zero counts across all samples?</li>
-                    <li>Compare the library sizes between KO and WT samples.</li>
+                    <li>How many genes pass the significance threshold of padj < 0.01?</li>
+                    <li>What are the genes with the most positive and most negative fold change?</li>
+                    <li>Look up one of the top genes in a gene database (e.g., GeneCards, NCBI Gene)</li>
                 </ol>
-            </div>
-
-            <div class="card">
-                <h3>Exercise 2: TPM Analysis</h3>
-                <ol><li>Find genes with TPM > 10 in one sample</li></ol>
-                <ol><li>How many genes are not expressed in all samples (TPM=0)</li></ol>
             </div>
         </section>
 
@@ -481,13 +215,11 @@ plt.close()
             <h2>Summary</h2>
             <p>In this lab, you have:</p>
             <ul>
-                <li>Built a Salmon transcriptome index</li>
-                <li>Quantified transcript expression for all samples</li>
-                <li>Used tximport to aggregate to gene-level counts</li>
-                <li>Created count and TPM matrices for downstream analysis</li>
-                <li>Explored basic expression statistics</li>
+                <li>Run DESeq2 differential expression analysis</li>
+                <li>Identified genes differentially expressed between KO and WT</li>
+                <li>Learned to interpret fold changes and adjusted p-values</li>
             </ul>
-            <p><strong>Next:</strong> <a href="lab6.html">Lab 6 - Differential Expression Analysis</a></p>
+            <p><strong>Next:</strong> <a href="lab6.html">Lab 6 - Visualization & QC Plots</a></p>
         </section>
     </main>
 
@@ -499,6 +231,34 @@ plt.close()
         function toggleNav() {
             document.getElementById('nav-menu').classList.toggle('show');
         }
+
+        // Add copy buttons to all code blocks
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre');
+            codeBlocks.forEach(function(pre) {
+                const container = document.createElement('div');
+                container.className = 'code-container';
+                pre.parentNode.insertBefore(container, pre);
+                container.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.addEventListener('click', function() {
+                    const code = pre.querySelector('code');
+                    const text = code ? code.textContent : pre.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(function() {
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+                container.appendChild(copyBtn);
+            });
+        });
     </script>
 </body>
 </html>

@@ -414,7 +414,7 @@ grep "gene_name \"INS\"" Homo_sapiens.GRCh38.110.chr11.gtf | head -5</code></pre
         </section>
 
         <section>
-                <h3>Part 6: Create transcript-to-gene mapping file - will be used later</h3>
+                <h3>Part 6 (Optional): Create transcript-to-gene mapping file - will be used later</h3>
                 <pre><code># Generate transcript ID to gene ID mapping from GTF
 # This is needed for tximport later
 
@@ -558,6 +558,34 @@ gzip *.fastq</code></pre>
         function toggleNav() {
             document.getElementById('nav-menu').classList.toggle('show');
         }
+
+        // Add copy buttons to all code blocks
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre');
+            codeBlocks.forEach(function(pre) {
+                const container = document.createElement('div');
+                container.className = 'code-container';
+                pre.parentNode.insertBefore(container, pre);
+                container.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.addEventListener('click', function() {
+                    const code = pre.querySelector('code');
+                    const text = code ? code.textContent : pre.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(function() {
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+                container.appendChild(copyBtn);
+            });
+        });
     </script>
 </body>
 </html>

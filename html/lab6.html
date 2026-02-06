@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab 6: Counting & Expression Matrix Construction - Bioinformatics 2026</title>
+    <title>Lab 6: Visualization & QC Plots - Bioinformatics 2026</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
@@ -21,7 +21,453 @@
         </div>
     </nav>
 
-    
+    <main>
+        <h1>Lab 6: Visualization & QC Plots</h1>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Create publication-quality visualizations using Python</li>
+                <li>Generate QC plots for expression data (library sizes, count distributions)</li>
+                <li>Create PCA plots to visualize sample relationships</li>
+                <li>Generate DESeq2 result plots (MA plot, volcano plot, heatmaps)</li>
+            </ul>
+        </div>
+
+        <section>
+            <h2>Part 1: Setup & Start Jupyter Notebook</h2>
+
+            <div class="step" data-step="1">
+                <h3>Install Jupyter in your genomics environment</h3>
+                <pre><code>conda activate genomics
+
+# Install Jupyter using mamba
+mamba install -c conda-forge jupyter jupyterlab -y
+
+# Verify installation
+jupyter --version</code></pre>
+            </div>
+
+            <div class="step" data-step="2">
+                <h3>Launch Jupyter Notebook</h3>
+                <pre><code># Make sure you're in the genomics directory
+cd ~/genomics
+
+# Launch Jupyter Notebook
+jupyter notebook</code></pre>
+                <p>This will open Jupyter in your web browser. Create a new Python 3 notebook named <code>visualization.ipynb</code></p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 2: QC Visualization</h2>
+
+            <div class="info-box tip">
+                <strong>Run in Jupyter Notebook</strong>
+                <p>Each code block below is designed to run as a separate Jupyter notebook cell.</p>
+            </div>
+
+            <div class="step" data-step="3">
+                <h3>Import libraries</h3>
+                <pre><code>import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+import seaborn as sns
+import os
+
+# Set plotting style
+plt.style.use('seaborn-v0_8-whitegrid')
+sns.set_palette("husl")
+
+# Create output directory
+output_dir = os.path.expanduser("~/genomics/results/figures")
+os.makedirs(output_dir, exist_ok=True)
+
+print("Libraries loaded successfully!")</code></pre>
+            </div>
+
+            <div class="step" data-step="4">
+                <h3>Load the gene counts data</h3>
+                <pre><code># Load data
+counts = pd.read_csv(os.path.expanduser("~/genomics/counts/gene_counts.tsv"), sep="\t", index_col=0)
+
+# Display summary
+print(f"Gene counts matrix: {counts.shape[0]} genes x {counts.shape[1]} samples")
+print(f"Samples: {list(counts.columns)}")
+counts.head()</code></pre>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Library size bar chart</h3>
+                <pre><code># Library size (total counts per sample)
+fig, ax = plt.subplots(figsize=(10, 6))
+library_sizes = counts.sum()
+colors = ['red' if 'KO' in s else 'green' for s in library_sizes.index]
+ax.bar(library_sizes.index, library_sizes.values / 1e6, color=colors)
+ax.set_ylabel("Total Counts (millions)")
+ax.set_title("Library Sizes")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig(f"{output_dir}/library_sizes.png", dpi=150)
+plt.show()
+print(f"Saved to {output_dir}/library_sizes.png")</code></pre>
+            </div>
+
+            <div class="step" data-step="6">
+                <h3>Count distribution - Boxplot</h3>
+                <pre><code># Distribution of counts (log scale)
+fig, ax = plt.subplots(figsize=(10, 6))
+log_counts = np.log10(counts + 1)
+
+# Use seaborn to plot
+sns.boxplot(data=log_counts, ax=ax, palette=palette)
+
+ax.set_ylabel("log10(counts + 1)")
+ax.set_title("Count Distribution per Sample")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig(f"{output_dir}/count_boxplot_distribution.png", dpi=150)
+plt.show()
+print(f"Saved to {output_dir}/count_boxplot_distribution.png")</code></pre>
+            </div>
+            <div class="step" data-step="7">
+                <h3>Count distribution Violin plot</h3>
+                <pre><code># Distribution of counts (log scale)
+fig, ax = plt.subplots(figsize=(10, 6))
+log_counts = np.log10(counts + 1)
+
+# Use seaborn to plot
+sns.violinplot(data=log_counts, ax=ax, palette=palette)
+
+ax.set_ylabel("log10(counts + 1)")
+ax.set_title("Count Distribution per Sample")
+plt.xticks(rotation=45)
+plt.tight_layout()
+plt.savefig(f"{output_dir}/count_boxplot_distribution.png", dpi=150)
+plt.show()
+print(f"Saved to {output_dir}/count_boxplot_distribution.png")</code></pre>
+            </div>
+
+            <div class="step" data-step="8">
+                <h3>PCA plot</h3>
+                <pre><code># Filter genes with low counts
+counts_filtered = counts[counts.max(axis=1) >= 3]
+print(f"Genes after filtering: {len(counts_filtered)}")
+
+# Log transform the data
+log_counts = np.log2(counts_filtered + 1)
+
+# Transpose so samples are rows
+data_for_pca = log_counts.T
+
+# Standardize
+scaler = StandardScaler()
+data_scaled = scaler.fit_transform(data_for_pca)
+
+# Perform PCA
+pca = PCA(n_components=2)
+pca_result = pca.fit_transform(data_scaled)
+
+# Create dataframe with results
+pca_df = pd.DataFrame({
+    'PC1': pca_result[:, 0],
+    'PC2': pca_result[:, 1],
+    'Sample': data_for_pca.index,
+    'Condition': ['KO' if 'KO' in s else 'WT' for s in data_for_pca.index]
+})
+
+# Plot
+fig, ax = plt.subplots(figsize=(10, 8))
+colors = {'KO': 'red', 'WT': 'green'}
+
+for condition in ['KO', 'WT']:
+    mask = pca_df['Condition'] == condition
+    ax.scatter(pca_df.loc[mask, 'PC1'], pca_df.loc[mask, 'PC2'],
+               c=colors[condition], label=condition, s=150,
+               edgecolors='black', linewidth=1.5)
+
+# Add sample labels
+for idx, row in pca_df.iterrows():
+    ax.annotate(row['Sample'], (row['PC1'], row['PC2']),
+                xytext=(5, 5), textcoords='offset points', fontsize=10)
+
+ax.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]*100:.1f}% variance)")
+ax.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]*100:.1f}% variance)")
+ax.set_title("PCA of Gene Expression: KO vs WT")
+ax.legend(title="Condition", loc='best')
+ax.axhline(y=0, color='gray', linestyle='--', alpha=0.3)
+ax.axvline(x=0, color='gray', linestyle='--', alpha=0.3)
+
+plt.tight_layout()
+plt.savefig(f"{output_dir}/pca_ko_vs_wt.png", dpi=150)
+plt.show()
+print(f"Saved to {output_dir}/pca_ko_vs_wt.png")</code></pre>
+
+                <div class="info-box note">
+                    <strong>Interpreting the PCA Plot</strong>
+                    <ul>
+                        <li>Samples that cluster together have similar expression profiles</li>
+                        <li>KO samples (red)</strong> should cluster separately from WT samples (green)</li>
+                        <li>PC1</strong> captures the most variance - often the biological condition of interest</li>
+                        <li>Replicates</strong> should cluster together within each condition</li>
+                    </ul>
+                </div>
+            </div>
+            
+<div class="step" data-step="9">
+    <h3>Sample Correlation Heatmap</h3>
+    <pre><code># Sample-to-sample correlation heatmap
+log_counts = np.log2(norm_counts + 1)
+
+# Calculate correlation matrix
+corr_matrix = log_counts.corr()
+
+# Create annotation for conditions
+sample_conditions = ['KO' if 'KO' in s else 'WT' for s in corr_matrix.columns]
+condition_colors = {'KO': 'red', 'WT': 'green'}
+row_colors = [condition_colors[c] for c in sample_conditions]
+
+# Plot clustered heatmap
+g = sns.clustermap(corr_matrix,
+       method='average',
+       cmap='RdYlBu_r',
+       vmin=0.8, vmax=1.0,
+       figsize=(10, 10),
+       row_colors=row_colors,
+       col_colors=row_colors,
+       annot=True,
+       fmt='.3f',
+       linewidths=0.5)
+
+g.fig.suptitle('Sample Correlation Heatmap', y=1.02, fontsize=14)
+
+plt.savefig(f"{output_dir}/sample_correlation_heatmap.png", dpi=150, bbox_inches='tight')
+plt.show()
+print(f"Saved to {output_dir}/sample_correlation_heatmap.png")</code></pre>
+
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 3: DESeq2 Result Plots</h2>
+
+            <div class="step" data-step="9">
+                <h3>Load DESeq2 results</h3>
+                <pre><code># Load DESeq2 results
+deseq_results = pd.read_csv(
+    os.path.expanduser("~/genomics/results/tables/deseq2_all_results.csv")
+)
+
+# Load normalized counts
+norm_counts = pd.read_csv(
+    os.path.expanduser("~/genomics/results/tables/normalized_counts.csv"),
+    index_col='gene_id'
+)
+
+print(f"Total genes in results: {len(deseq_results)}")
+print(f"\nDESeq2 results preview:")
+deseq_results.head()</code></pre>
+            </div>
+
+            <div class="step" data-step="10">
+                <h3>MA Plot</h3>
+                <pre><code># MA Plot: log2 Fold Change vs Mean Expression
+fig, ax = plt.subplots(figsize=(10, 8))
+
+df = deseq_results.copy()
+df['significant'] = (df['padj'] < 0.05) & (abs(df['log2FoldChange']) > 1)
+
+# Plot non-significant genes
+ns = df[~df['significant']]
+ax.scatter(np.log10(ns['baseMean'] + 1), ns['log2FoldChange'],
+           c='gray', alpha=0.3, s=10, label='NS')
+
+# Plot significant genes
+sig = df[df['significant']]
+ax.scatter(np.log10(sig['baseMean'] + 1), sig['log2FoldChange'],
+           c='red', alpha=0.6, s=15, label='Significant')
+
+# Add reference lines
+ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
+ax.axhline(y=1, color='blue', linestyle='--', linewidth=0.5, alpha=0.5)
+ax.axhline(y=-1, color='blue', linestyle='--', linewidth=0.5, alpha=0.5)
+
+ax.set_xlabel('log10(Mean Expression + 1)', fontsize=12)
+ax.set_ylabel('log2 Fold Change (KO/WT)', fontsize=12)
+ax.set_title('MA Plot: KO vs WT', fontsize=14)
+ax.legend(loc='upper right')
+ax.set_ylim(-6, 6)
+
+plt.tight_layout()
+plt.savefig(f"{output_dir}/MA_plot.png", dpi=150, bbox_inches='tight')
+plt.show()
+print(f"Saved to {output_dir}/MA_plot.png")</code></pre>
+            </div>
+
+            <div class="step" data-step="11">
+                <h3>Volcano Plot</h3>
+                <pre><code># Volcano Plot: -log10(p-value) vs log2 Fold Change
+fig, ax = plt.subplots(figsize=(10, 8))
+
+df = deseq_results.copy()
+df = df.dropna(subset=['pvalue', 'log2FoldChange'])
+
+# Calculate -log10(pvalue)
+df['neg_log10_pval'] = -np.log10(df['pvalue'])
+
+# Classify genes
+conditions = [
+    (df['padj'] < 0.05) & (df['log2FoldChange'] > 1),   # Up
+    (df['padj'] < 0.05) & (df['log2FoldChange'] < -1),  # Down
+]
+choices = ['Upregulated', 'Downregulated']
+df['regulation'] = np.select(conditions, choices, default='Not Significant')
+
+# Define colors
+colors = {'Upregulated': 'red', 'Downregulated': 'blue', 'Not Significant': 'gray'}
+
+# Plot each category
+for reg, color in colors.items():
+    subset = df[df['regulation'] == reg]
+    alpha = 0.7 if reg != 'Not Significant' else 0.3
+    ax.scatter(subset['log2FoldChange'], subset['neg_log10_pval'],
+               c=color, alpha=alpha, s=15, label=f'{reg} ({len(subset)})')
+
+# Add threshold lines
+ax.axvline(x=1, color='gray', linestyle='--', linewidth=0.8)
+ax.axvline(x=-1, color='gray', linestyle='--', linewidth=0.8)
+ax.axhline(y=-np.log10(0.05), color='gray', linestyle='--', linewidth=0.8)
+
+ax.set_xlabel('log2 Fold Change', fontsize=12)
+ax.set_ylabel('-log10(p-value)', fontsize=12)
+ax.set_title('Volcano Plot: KO vs WT', fontsize=14)
+ax.legend(loc='upper right')
+
+plt.tight_layout()
+plt.savefig(f"{output_dir}/volcano_plot.png", dpi=150, bbox_inches='tight')
+plt.show()
+print(f"Saved to {output_dir}/volcano_plot.png")</code></pre>
+            </div>
+
+            <div class="step" data-step="12">
+                <h3>Top DE Genes Heatmap</h3>
+                <pre><code># Heatmap of top DE genes
+sig_genes = deseq_results[
+    (deseq_results['padj'] < 0.05) &
+    (abs(deseq_results['log2FoldChange']) > 1)
+].sort_values('padj')
+
+print(f"Total significant genes: {len(sig_genes)}")
+
+# Select top 30 genes
+n_top = min(30, len(sig_genes))
+top_genes = sig_genes.head(n_top)['gene_id'].tolist()
+
+if len(top_genes) > 0:
+    # Extract counts for top genes
+    top_counts = norm_counts.loc[norm_counts.index.isin(top_genes)]
+
+    # Log transform and Z-score normalize
+    log_top = np.log2(top_counts + 1)
+    z_scores = (log_top.T - log_top.mean(axis=1)) / log_top.std(axis=1)
+    z_scores = z_scores.T
+
+    # Create annotation
+    sample_conditions = ['KO' if 'KO' in s else 'WT' for s in z_scores.columns]
+    col_colors = ['red' if c == 'KO' else 'green' for c in sample_conditions]
+
+    # Plot
+    g = sns.clustermap(z_scores,
+                       method='average',
+                       cmap='RdBu_r',
+                       center=0,
+                       vmin=-2, vmax=2,
+                       figsize=(10, 12),
+                       col_colors=col_colors,
+                       yticklabels=True,
+                       xticklabels=True,
+                       linewidths=0.5)
+
+    g.fig.suptitle(f'Top {n_top} Differentially Expressed Genes (Z-score)', y=1.02, fontsize=14)
+
+    plt.savefig(f"{output_dir}/top_genes_heatmap.png", dpi=150, bbox_inches='tight')
+    plt.show()
+    print(f"Saved to {output_dir}/top_genes_heatmap.png")
+else:
+    print("No significant genes found with the current thresholds.")</code></pre>
+            </div>
+
+            <div class="step" data-step="13">
+                <h3>Summary Statistics</h3>
+                <pre><code># Summary of differential expression results
+df = deseq_results.dropna(subset=['padj'])
+
+# Count genes at different thresholds
+thresholds = [
+    ('padj < 0.1', (df['padj'] < 0.1).sum()),
+    ('padj < 0.05', (df['padj'] < 0.05).sum()),
+    ('padj < 0.01', (df['padj'] < 0.01).sum()),
+    ('padj < 0.05 & |LFC| > 1', ((df['padj'] < 0.05) & (abs(df['log2FoldChange']) > 1)).sum()),
+    ('padj < 0.05 & |LFC| > 2', ((df['padj'] < 0.05) & (abs(df['log2FoldChange']) > 2)).sum()),
+]
+
+print("=" * 50)
+print("Summary of Differential Expression Analysis")
+print("=" * 50)
+print(f"\nTotal genes tested: {len(df)}")
+print("\nGenes at different significance thresholds:")
+for desc, count in thresholds:
+    print(f"  {desc}: {count}")
+
+# Up vs Down regulated
+sig = df[(df['padj'] < 0.05) & (abs(df['log2FoldChange']) > 1)]
+up = (sig['log2FoldChange'] > 0).sum()
+down = (sig['log2FoldChange'] < 0).sum()
+print(f"\nAt padj < 0.05 and |LFC| > 1:")
+print(f"  Upregulated in KO: {up}")
+print(f"  Downregulated in KO: {down}")
+print("=" * 50)</code></pre>
+            </div>
+
+            <div class="info-box note">
+                <strong>Interpreting the Plots</strong>
+                <ul>
+                    <li><strong>MA Plot:</strong> Shows relationship between expression level and fold change. Red points are significant.</li>
+                    <li><strong>Volcano Plot:</strong> Combines fold change and statistical significance. Top corners contain the most interesting genes.</li>
+                    <li><strong>Correlation Heatmap:</strong> Replicates should correlate highly with each other.</li>
+                    <li><strong>Top Genes Heatmap:</strong> Shows expression patterns of the most significant genes across samples.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Exercises</h2>
+            <div class="card">
+                <h3>Exercise 1: Customize Plots</h3>
+                <ol>
+                    <li>Create a heatmap showing only upregulated or downregulated genes</li>
+                    <li>Is there any outlier sample</li>
+                </ol>
+            </div>
+
+            
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you have:</p>
+            <ul>
+                <li>Set up Jupyter Notebook for interactive analysis</li>
+                <li>Created QC plots (library sizes, count distributions, PCA)</li>
+                <li>Generated DESeq2 result plots (MA, volcano, heatmaps)</li>
+                <li>Learned to interpret various visualization types</li>
+            </ul>
+            <p><strong>Next:</strong> <a href="lab7.html">Lab 7 - Enrichment Analysis with g:Profiler</a></p>
+        </section>
+    </main>
+
     <footer>
         <p>Bioinformatics Specialization Program 2026 - KAUST Academy</p>
     </footer>
@@ -30,6 +476,34 @@
         function toggleNav() {
             document.getElementById('nav-menu').classList.toggle('show');
         }
+
+        // Add copy buttons to all code blocks
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre');
+            codeBlocks.forEach(function(pre) {
+                const container = document.createElement('div');
+                container.className = 'code-container';
+                pre.parentNode.insertBefore(container, pre);
+                container.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.addEventListener('click', function() {
+                    const code = pre.querySelector('code');
+                    const text = code ? code.textContent : pre.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(function() {
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+                container.appendChild(copyBtn);
+            });
+        });
     </script>
 </body>
 </html>

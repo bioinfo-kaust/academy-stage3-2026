@@ -38,6 +38,8 @@
             <h2>Step 1: Command Line Terminal Setup</h2>
             <p style="color: red;">Critical step: make sure it works</p>
             <details><summary>For macOS Users</summary>
+            <div class="step" data-step="1">
+            <h4>Terminal</h4>
             <p>macOS includes a built-in Terminal application with a Unix-based shell.</p>
             <pre><code># Open Terminal
 # Applications > Utilities > Terminal
@@ -45,8 +47,14 @@
 
 # Verify your shell
 echo $SHELL
+</code></pre></div>
+<div class="step" data-step="2">
+    <h4>Install Essential Toos</h4>
+<pre><code>
+brew install wget curl git
+xcode-select --install
 </code></pre>
-
+</div>
 </details>
             <details>
             <summary>For Windows Users (WSL)</summary>
@@ -166,7 +174,7 @@ conda activate genomics
             <div class="step" data-step="2">
                 <h3>Install Bioinformatics Tools</h3>
                 <pre><code># Install core bioinformatics tools using mamba (faster than conda)
-mamba install -c conda-forge -c bioconda sra-tools fastqc fastp seqkit multiqc star salmon samtools igv -y
+mamba install -c conda-forge -c bioconda sra-tools fastqc fastp seqkit multiqc star salmon samtools igv wget tree -y
 
 </code></pre>
             </div>

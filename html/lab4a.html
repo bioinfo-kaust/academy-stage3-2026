@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab 4a: Genome Alignment (STAR + Salmon) - Bioinformatics 2026</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="../index.html" class="logo">Bioinformatics Specialization Program - KAUST Academy</a>
+            <button class="nav-toggle" onclick="toggleNav()">&#9776;</button>
+            <ul id="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="schedule.html">Schedule</a></li>
+                <li><a href="labs.html" class="active">Labs</a></li>
+                <li><a href="projects.html">Projects</a></li>
+                <li><a href="setup.html">Setup</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <h1>Lab 4a: Genome Alignment (STAR + Salmon)</h1>
+
+        <div class="info-box warning">
+            <strong>Choose Your Path</strong>
+            <p>This lab uses <strong>genome alignment with STAR</strong> followed by Salmon quantification. Choose this approach when you need:</p>
+            <ul>
+                <li>BAM files for visualization in IGV</li>
+                <li>Read-level information (splice junctions, mutations, etc.)</li>
+                <li>Integration with variant calling or other genome-based analyses</li>
+            </ul>
+            <p>If you only need gene expression counts and want faster processing, use <a href="lab4b.html">Lab 4b: Pseudo-alignment (Salmon only)</a> instead.</p>
+        </div>
+
+        <div class="info-box note">
+            <strong>Learning Objectives</strong>
+            <ul>
+                <li>Build a STAR genome index for chromosome 11</li>
+                <li>Align RNA-seq reads to the reference genome using STAR</li>
+                <li>Understand BAM file format and alignment statistics</li>
+                <li>Use samtools to inspect and manipulate BAM files</li>
+                <li>Quantify transcripts with Salmon and aggregate to gene level</li>
+            </ul>
+        </div>
+
+        <section>
+            <h2>Why STAR for RNA-seq Alignment?</h2>
+            <div class="card">
+                <h3>STAR (Spliced Transcripts Alignment to a Reference)</h3>
+                <p>STAR is the gold-standard aligner for RNA-seq data because it:</p>
+                <ul>
+                    <li><strong>Handles splicing:</strong> Can align reads across exon-exon junctions</li>
+                    <li><strong>Fast:</strong> Uses uncompressed suffix arrays for rapid alignment</li>
+                    <li><strong>Accurate:</strong> High mapping accuracy even for novel splice junctions</li>
+                    <li><strong>Flexible:</strong> Outputs BAM files compatible with downstream tools</li>
+                </ul>
+            </div>
+
+            <div class="info-box warning">
+                <strong>Memory Requirements</strong>
+                <p>STAR requires significant RAM (~32 GB for full human genome). Using chromosome 11 only reduces this to ~4 GB, making it suitable for laptops.</p>
+                <p>STAR has many parameters and options, always revisit STAR manual (<a href="https://github.com/alexdobin/STAR/blob/b1edc1208d91a53bf40ebae8669f71d50b994851/doc/STARmanual.pdf">current version 2.7.11b</a>) for details</p>
+            </div>
+        </section>
+        <section>
+            <h2>Check Genome Reference Files</h2>
+            <p>Make sure the steps in <a href="lab1.html">Lab 1</a> Part 3-5 were successful, Check contents of the reference folder<code>ls -lh ~/genomics/references</code></p>
+        </section>
+        <section>
+            <h2>Part 1: Build STAR Genome Index</h2>
+            <p>Before alignment, STAR requires a pre-built genome index.</p>
+
+            <div class="step" data-step="1">
+                <h3>Create the STAR index</h3>
+                <pre><code>cd ~/genomics
+
+# Activate environment
+conda activate genomics
+
+# Create directory for STAR index
+mkdir -p references/star_index
+
+# Build STAR index for chromosome 11
+# This takes 5-10 minutes and ~4 GB RAM
+STAR --runMode genomeGenerate \
+    --runThreadN 4 \
+    --genomeDir references/star_index \
+    --genomeFastaFiles references/Homo_sapiens.GRCh38.dna.chromosome.11.fa \
+    --sjdbGTFfile references/Homo_sapiens.GRCh38.110.chr11.gtf \
+    --sjdbOverhang 69 \
+    --genomeSAindexNbases 11
+
+# Check the generated index files
+ls -lh references/star_index/</code></pre>
+
+                <div class="info-box note">
+                    <strong>Key Parameters</strong>
+                    <ul>
+                        <li><code>--sjdbOverhang 69</code>: ReadLength - 1 (our reads are 70 bp)</li>
+                        <li><code>--genomeSAindexNbases 11</code>: Reduced for small genomes (chr11 only)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 2: Align Reads with STAR</h2>
+
+            <div class="step" data-step="2">
+                <h3>Align one sample</h3>
+                <pre><code>cd ~/genomics
+
+# Align KO_1 sample
+STAR --runThreadN 4 \
+    --genomeDir references/star_index \
+    --readFilesIn trimmed_data/KO_1_SRR10045016_1.trimmed.fastq.gz \
+                  trimmed_data/KO_1_SRR10045016_2.trimmed.fastq.gz \
+    --outFileNamePrefix alignment/KO_1_ \
+    --outSAMattributes Standard \
+    --readFilesCommand zcat \
+    --outSAMtype BAM SortedByCoordinate \
+    --quantMode GeneCounts
+
+# Check output files
+ls -lh alignment/KO_1_*</code></pre>
+            </div>
+            <div class="info-box note">
+                <strong>Download aligned chr11 BAM file</strong>
+                <p>If you have issues running STAR,please download this zip file to get pre-aligned BAM files for all samples (chr11)<a href="chr11.zip">https://drive.google.com/drive/folders/1VHhugmCIAog3HgoTaODQWS_8rLVObIFo?usp=sharing</a></p>
+            </div>
+
+            </div>
+            <div class="info-box note">
+                <strong>Troubleshooting</strong>
+                <ul>
+                    <li><code>--readFilesCommand zcat</code>: You might need to change this depending what extraction method is available on your system</li>
+                    <li>In case STAT does not finish normally, Review <code>alignment/sample_Log.out</code> for information. On Mac it might have issues with the CPU architecture</li>
+                    <li>The <code>--sjdbGTFfile</code> option must have been used during star_index generation when <code>--quantMode GeneCounts</code> is enabled.<li>
+                </ul>
+            </div>
+            <div class="step" data-step="3">
+                <h3>Align all samples</h3>
+                <pre><code>cd ~/genomics
+
+# Define samples
+SAMPLES="KO_1_SRR10045016 KO_2_SRR10045017 KO_3_SRR10045018 WT_1_SRR10045019 WT_2_SRR10045020 WT_3_SRR10045021"
+
+# Align each sample
+for SAMPLE in $SAMPLES; do
+    echo "Aligning $SAMPLE..."
+
+    STAR --runThreadN 4 \
+        --genomeDir references/star_index \
+        --readFilesIn trimmed_data/${SAMPLE}_1.trimmed.fastq.gz \
+                      trimmed_data/${SAMPLE}_2.trimmed.fastq.gz \
+        --outFileNamePrefix alignment/${SAMPLE}_ \
+        --outSAMattributes Standard \
+        --readFilesCommand zcat \
+        --outSAMtype BAM SortedByCoordinate \
+        --quantMode GeneCounts
+        2>> logs/star.log
+done
+
+echo "Alignment complete!"
+ls -lh alignment/*.bam</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 3: Understanding STAR Output</h2>
+
+            <div class="step" data-step="4">
+                <h3>Review alignment log</h3>
+                <pre><code>cd ~/genomics
+
+# View the alignment summary (Log.final.out)
+cat alignment/KO_1_Log.final.out
+
+# Key metrics to look for:
+# - Uniquely mapped reads %: Should be >80% for good data
+# - % of reads mapped to multiple loci: High values may indicate repetitive sequences
+# - % of reads unmapped: Should be relatively low</code></pre>
+
+                <div class="card">
+                    <h3>Expected Alignment Metrics</h3>
+                    <table class="schedule-table">
+                        <tr><th>Metric</th><th>Good</th><th>Acceptable</th><th>Investigate</th></tr>
+                        <tr><td>Uniquely mapped %</td><td>>80%</td><td>70-80%</td><td><70%</td></tr>
+                        <tr><td>Multi-mapped %</td><td><10%</td><td>10-20%</td><td>>20%</td></tr>
+                        <tr><td>Unmapped %</td><td><5%</td><td>5-15%</td><td>>15%</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="step" data-step="5">
+                <h3>Compare alignment rates across samples</h3>
+                <p>Go through each file manually, see <code>alignment/sampleName_Log.final.out</code> and look for Sample,Input_Reads,Uniquely_Mapped,Unique%,Multi_Mapped,Unmapped rows</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 4: Working with BAM Files</h2>
+
+            <div class="step" data-step="6">
+                <h3>Index BAM files with samtools</h3>
+                <pre><code>cd ~/genomics/
+
+# Index all BAM files (required for IGV and many tools)
+for bam in alignment/*_Aligned.sortedByCoord.out.bam; do
+    echo "Indexing $bam..."
+    samtools index $bam
+done
+
+# Verify index files were created
+ls -lh alignment/*.bai</code></pre>
+            </div>
+
+            <div class="step" data-step="7">
+                <h3>Explore BAM file structure</h3>
+                <pre><code># View BAM header
+samtools view -H alignment/KO_1_Aligned.sortedByCoord.out.bam | head -20
+
+# View first 5 aligned reads
+samtools view alignment/KO_1_Aligned.sortedByCoord.out.bam | head -5
+
+# Count total aligned reads
+samtools view -c alignment/KO_1_Aligned.sortedByCoord.out.bam
+
+# Count properly paired reads
+samtools view -c -f 2 alignment/KO_1_Aligned.sortedByCoord.out.bam</code></pre>
+
+                <div class="info-box note">
+                    <strong>BAM Format - Key Columns</strong>
+                    <table class="schedule-table">
+                        <tr><th>Col</th><th>Field</th><th>Description</th></tr>
+                        <tr><td>1</td><td>QNAME</td><td>Read name</td></tr>
+                        <tr><td>2</td><td>FLAG</td><td>Bitwise flag (paired, mapped, etc.)</td></tr>
+                        <tr><td>3</td><td>RNAME</td><td>Reference chromosome</td></tr>
+                        <tr><td>4</td><td>POS</td><td>Mapping position</td></tr>
+                        <tr><td>5</td><td>MAPQ</td><td>Mapping quality</td></tr>
+                        <tr><td>6</td><td>CIGAR</td><td>Alignment description</td></tr>
+                        <tr><td>10</td><td>SEQ</td><td>Read sequence</td></tr>
+                        <tr><td>11</td><td>QUAL</td><td>Quality scores</td></tr>
+                    </table>
+                </div>
+                <div class="info-box note">
+                    <strong>Samtools flags</strong>
+                    <p>To know what flag to use when inspecting BAM files using samtools, visit <a href="https://broadinstitute.github.io/picard/explain-flags.html">Explain flags</a> check the desired boxes and use the resulting number from the top with <code>-f</code> or <code>-F</code> flags in samtools </p>
+                </div>
+            </div>
+
+            <div class="step" data-step="8">
+                <h3>Generate alignment statistics</h3>
+                <pre><code># Detailed statistics with samtools flagstat
+samtools flagstat alignment/KO_1_Aligned.sortedByCoord.out.bam
+
+# Generate stats for all samples
+for bam in alignment/*_Aligned.sortedByCoord.out.bam; do
+    echo "--- $bam ---"
+    samtools flagstat $bam | head -5
+    echo ""
+done</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 5: Visualizing Aligned Reads</h2>
+
+            <div class="step" data-step="9">
+                <h3>View in IGV (Integrative Genomics Viewer)</h3>
+                <pre><code># Launch IGV (if installed via conda)
+igv &
+
+# In IGV:
+# 1. Genomes > Load Genome from File > references/Homo_sapiens.GRCh38.dna.chromosome.11.fa
+# 2. File > Load from File > references/references/Homo_sapiens.GRCh38.110.chr11.gtf
+# 3. File > Load from File > alignment/KO_1_Aligned.sortedByCoord.out.bam
+# 4. Navigate to a gene: e.g., search for "MDK" (Midkine gene on chr11)
+# 5. Check reads mapping to each exon in "Midkine" gene
+# 6. Load BAM file for a WT sample and see if there are any differences with the KO sample above
+            </div>
+
+            <div class="step" data-step="10">
+                <h3>Alternative Approach: use <code>samtools</code> to investigate BAM files</h3>
+                <pre><code># View reads at a specific position (add chr:start-end to samtools command)
+# MDK gene is approximately at chr11:46380756–46383837
+samtools view alignment/KO_1_Aligned.sortedByCoord.out.bam chr11:46380756–46383837 | head -5
+
+# Count reads in the MDK gene region
+samtools view -c alignment/KO_1_Aligned.sortedByCoord.out.bam chr11:46380756–46383837
+
+# Compare expression between conditions
+echo "=== Reads in MDK gene region ==="
+for bam in alignment/*_Aligned.sortedByCoord.out.bam; do
+    echo $bam
+    samtools view -c $bam chr11:46380756–46383837
+done</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 6: Transcript Quantification with Salmon</h2>
+            <p>After alignment, we use Salmon to quantify transcript abundance. Salmon provides accurate counts that work well with DESeq2.</p>
+
+            <div class="card">
+                <h3>Why Salmon?</h3>
+                <ul>
+                    <li><strong>Fast:</strong> Quasi-mapping is much faster than traditional alignment</li>
+                    <li><strong>Accurate:</strong> Handles multi-mapping reads and transcript isoforms well</li>
+                    <li><strong>Bias correction:</strong> Built-in GC and sequence bias correction</li>
+                    <li><strong>Compatible:</strong> Output works directly with DESeq2 via tximport</li>
+                </ul>
+            </div>
+
+            <div class="step" data-step="11">
+                <h3>Build Salmon transcriptome index</h3>
+                <pre><code>cd ~/genomics
+
+# Build Salmon index from chr11 transcriptome
+salmon index \
+    -t references/transcriptome_chr11.fa \
+    -i references/salmon_index \
+    --threads 4
+
+# Check the index
+ls -lh references/salmon_index/</code></pre>
+
+                <div class="info-box note">
+                    <strong>Transcriptome vs Genome</strong>
+                    <p>Salmon uses a transcriptome reference (cDNA sequences) rather than the genome. This is faster and more appropriate for RNA-seq quantification.</p>
+                </div>
+            </div>
+
+            <div class="step" data-step="12">
+                <h3>Quantify all samples with Salmon</h3>
+                <pre><code>cd ~/genomics
+
+# Define samples
+SAMPLES="KO_1_SRR10045016 KO_2_SRR10045017 KO_3_SRR10045018 WT_1_SRR10045019 WT_2_SRR10045020 WT_3_SRR10045021"
+
+# Process each sample
+for SAMPLE in $SAMPLES; do
+    # Extract short name (KO_1, KO_2, etc.)
+    SHORT_NAME=$(echo $SAMPLE | cut -d'_' -f1,2)
+    echo "Quantifying $SHORT_NAME..."
+
+    salmon quant \
+        -i references/salmon_index \
+        -l A \
+        -1 trimmed_data/${SAMPLE}_1.trimmed.fastq.gz \
+        -2 trimmed_data/${SAMPLE}_2.trimmed.fastq.gz \
+        -o salmon_quant/${SHORT_NAME} \
+        --threads 4 \
+        --validateMappings \
+        --gcBias \
+        --seqBias \
+        2>> logs/salmon.log
+done
+
+echo "Quantification complete!"
+ls salmon_quant/</code></pre>
+
+                <div class="info-box note">
+                    <strong>Salmon Parameters</strong>
+                    <ul>
+                        <li><code>-l A</code>: Auto-detect library type</li>
+                        <li><code>--validateMappings</code>: More accurate mapping</li>
+                        <li><code>--gcBias</code>: Correct for GC content bias</li>
+                        <li><code>--seqBias</code>: Correct for sequence-specific bias</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="13">
+                <h3>Explore Salmon output</h3>
+                <pre><code># View the quantification file
+head -20 salmon_quant/KO_1/quant.sf
+
+# The columns are:
+# Name: Transcript ID
+# Length: Transcript length
+# EffectiveLength: Length adjusted for bias
+# TPM: Transcripts Per Million
+# NumReads: Estimated read count
+
+# Check mapping rate
+grep "Mapping rate" salmon_quant/KO_1/logs/salmon_quant.log
+
+# Compare mapping rates across samples
+echo "=== Salmon Mapping Rates ==="
+for dir in salmon_quant/*/; do
+    sample=$(basename $dir)
+    rate=$(grep "Mapping rate" $dir/logs/salmon_quant.log | awk '{print $NF}')
+    echo "$sample: $rate"
+done</code></pre>
+            </div>
+        </section>
+
+        <section>
+            <h2>Part 7: Aggregate to Gene Level with tximport</h2>
+            <p>Salmon provides transcript-level counts. We use tximport in R to aggregate these to gene level for DESeq2.</p>
+
+            <div class="step" data-step="14">
+                <h3>Download the tximport script</h3>
+                <p>We provide a reusable R script that handles both tx2gene generation from GTF and tximport aggregation.</p>
+                <pre><code>cd ~/genomics
+
+# Install required R packages (if not already installed)
+Rscript -e 'install.packages(c("tximport", "optparse"), repos="https://cloud.r-project.org")'
+
+# Create scripts directory
+mkdir -p scripts
+
+# Download the tximport script from GitHub
+wget -O scripts/run_tximport.R \
+    https://raw.githubusercontent.com/kaust-academy/academy-stage3-2026/main/scripts/run_tximport.R
+
+# Make it executable (optional)
+chmod +x scripts/run_tximport.R
+
+# View script help
+Rscript scripts/run_tximport.R --help</code></pre>
+
+                <div class="info-box note">
+                    <strong>Script Features</strong>
+                    <ul>
+                        <li>Automatically generates tx2gene mapping from your GTF file</li>
+                        <li>Auto-detects sample directories in salmon_quant folder</li>
+                        <li>Outputs count matrices, TPM values, and sample info</li>
+                        <li>Creates tximport.rds object ready for DESeq2</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="15">
+                <h3>Run tximport</h3>
+                <pre><code>cd ~/genomics
+
+# Run the tximport script with your GTF and Salmon output
+Rscript scripts/run_tximport.R \
+    --gtf references/Homo_sapiens.GRCh38.110.chr11.gtf \
+    --salmon_dir salmon_quant \
+    --outdir counts
+
+# Check the output files
+ls -lh counts/</code></pre>
+
+                <div class="info-box note">
+                    <strong>Script Parameters</strong>
+                    <ul>
+                        <li><code>--gtf</code>: Path to GTF annotation file (used to generate tx2gene mapping)</li>
+                        <li><code>--salmon_dir</code>: Directory containing Salmon output (one subdirectory per sample)</li>
+                        <li><code>--outdir</code>: Output directory for count matrices</li>
+                        <li><code>--tx2gene</code>: (Optional) Use existing tx2gene.tsv instead of generating from GTF</li>
+                        <li><code>--samples</code>: (Optional) Comma-separated sample list (auto-detected if not provided)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step" data-step="16">
+                <h3>Explore the expression matrix</h3>
+                <pre><code>cd ~/genomics
+
+# View the first few genes in the count matrix
+head -20 counts/gene_counts.tsv | column -t
+
+# How many genes have counts?
+wc -l counts/gene_counts.tsv
+
+# View TPM values (normalized)
+head -20 counts/gene_tpm.tsv | column -t
+
+# View sample info (auto-generated)
+cat counts/sample_info.tsv
+
+# Open the count matrix in MS Excel and get familiar with the content</code></pre>
+
+                <div class="info-box tip">
+                    <strong>Ready for Differential Expression</strong>
+                    <p>You now have gene-level count matrices ready for DESeq2 analysis in Lab 5. The script generated:</p>
+                    <ul>
+                        <li><code>gene_counts.tsv</code> - Raw counts for DESeq2</li>
+                        <li><code>gene_tpm.tsv</code> - TPM values for visualization</li>
+                        <li><code>sample_info.tsv</code> - Sample metadata</li>
+                        <li><code>tx2gene.tsv</code> - Transcript-to-gene mapping</li>
+                        <li><code>tximport.rds</code> - R object for DESeq2</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Exercises</h2>
+            <div class="card">
+                <h3>Exercise 1: Alignment Analysis</h3>
+                <ol>
+                    <li>Which sample has the highest mapping rate? Which has the lowest?</li>
+                    <li>How many reads map to multiple locations? Why might this occur?</li>
+                    <li>Why did we use<code>--sjdbOverhang 69</code> in building the STAR index? Hint: use STAR manual to answer.
+                </ol>
+            </div>
+
+            <div class="card">
+                <h3>Exercise 2: BAM Exploration</h3>
+                <p>Use samtools:</p>
+                <pre><code># How many reads have mapping quality >= 30?
+samtools view -c -q 30 alignment/KO_1_Aligned.sortedByCoord.out.bam
+
+# How many reads are on the forward strand?
+samtools view -c -F 16 alignment/KO_1_Aligned.sortedByCoord.out.bam
+
+# Extract reads from a specific region to a new BAM
+samtools view -b alignment/KO_1_Aligned.sortedByCoord.out.bam 11:1000000-2000000 > test_region.bam</code></pre>
+
+Question: Which condition (WT vs. KO) have more reads in "TTC17" gene?
+            </div>
+        </section>
+
+        <section>
+            <h2>Summary</h2>
+            <p>In this lab, you have:</p>
+            <ul>
+                <li>Built a STAR genome index for chromosome 11</li>
+                <li>Aligned RNA-seq reads using STAR with splice-aware alignment</li>
+                <li>Interpreted alignment logs and metrics</li>
+                <li>Used samtools to index, view, and analyze BAM files</li>
+                <li>Explored read coverage at specific genomic regions</li>
+                <li>Quantified transcripts with Salmon</li>
+                <li>Aggregated transcript counts to gene level with tximport</li>
+            </ul>
+            <p><strong>Next:</strong> <a href="lab5.html">Lab 5 - Differential Expression Analysis</a></p>
+        </section>
+    </main>
+
+    <footer>
+        <p>Bioinformatics Specialization Program 2026 - KAUST Academy</p>
+    </footer>
+
+    <script>
+        function toggleNav() {
+            document.getElementById('nav-menu').classList.toggle('show');
+        }
+
+        // Add copy buttons to all code blocks
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeBlocks = document.querySelectorAll('pre');
+            codeBlocks.forEach(function(pre) {
+                const container = document.createElement('div');
+                container.className = 'code-container';
+                pre.parentNode.insertBefore(container, pre);
+                container.appendChild(pre);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-btn';
+                copyBtn.textContent = 'Copy';
+                copyBtn.addEventListener('click', function() {
+                    const code = pre.querySelector('code');
+                    const text = code ? code.textContent : pre.textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        copyBtn.classList.add('copied');
+                        setTimeout(function() {
+                            copyBtn.textContent = 'Copy';
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+                container.appendChild(copyBtn);
+            });
+        });
+    </script>
+</body>
+</html>
